@@ -10,7 +10,7 @@ using namespace tthread;
 using namespace std;
 using json = nlohmann::json;
 
-int G_global_data;
+int G_global_data = 0;
 mutex m;
 
 void test1(json input) {
@@ -30,8 +30,6 @@ void test2(json input) {
 
 int main()
 {
-    G_global_data = 0;
-
 
     json j;
     j.push_back("foo");
@@ -53,26 +51,25 @@ int main()
         }}
     };
 
+    //thread t(test, 0);
+    thread t  (HelloThread, 0);
+    thread t2 (HelloThread, 0);
+    thread t3 (HelloThread, 0);
+    thread t4 (HelloThread, 0);
+    cout << j << endl;
+    cout << j2 << endl;
+    t.join();
+    t2.join();
+    t3.join();
+    t4.join();
+
     WebSocket::pointer ws = WebSocket::from_url("ws://localhost:1234/servercommand/");
     assert(ws);
 
     ws->poll();
     ws->send("11");
     //ws->dispatch(handle_message);
-
     delete ws;
-
-    //thread t(test, 0);
-    thread t  (HelloThread, 0);
-    thread t2 (HelloThread, 0);
-    thread t3 (HelloThread, 0);
-    thread t4 (HelloThread, 0);
-    //cout << j << endl;
-    //cout << j2 << endl;
-    t.join();
-    t2.join();
-    t3.join();
-    t4.join();
 
     return 0;
 }

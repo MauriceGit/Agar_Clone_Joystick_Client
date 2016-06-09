@@ -105,6 +105,7 @@ GLfloat G_Objects[] = {
     -15.0, 15.0, -15.0
 };
 Geometry G_Sphere;
+Geometry G_Cube;
 
 /*
  * =====================================================================
@@ -576,7 +577,7 @@ int initAndStartIO (char* title, int width, int height)
         printf("before sphere\n"); fflush(stdout);
         G_Sphere = createUnitSphere(10);
         printf("after sphere\n"); fflush(stdout);
-        //Geometry cube = createUnitCube(3);
+        G_Cube = createUnitCube(10);
         //printf("after cube\n"); fflush(stdout);
 
         printf ("--> Initialisation finished\n"); fflush(stdout);

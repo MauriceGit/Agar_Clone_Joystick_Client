@@ -54,30 +54,32 @@ void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Ve
             Vec3D p2 = bilinearPosition(v0, v3, edge01, edge32, (x + 1)*xStep, (y + 1)*yStep);
             Vec3D p3 = bilinearPosition(v0, v3, edge01, edge32, (x + 0)*xStep, (y + 1)*yStep);
 
-            *((Vec3D*)&data[(vertexIndex + 0)*stride]) = p0;
-            *((Vec3D*)&data[(vertexIndex + 1)*stride]) = p1;
-            *((Vec3D*)&data[(vertexIndex + 2)*stride]) = p2;
+// Hier habe ich mir die Position der Vec3Ds in byte berechnet. Da du jetzt einen Vec3D-Pointer hast musst du dir das anders berechnen.
+// (2*, weil jeder Vertex aus einer Position und einer Normale besteht.)
+// vertexIndex ist ein schlechter Name. Das ist der Index des Quads.
+            data[2*(vertexIndex + 0)] = p0;
+            data[2*(vertexIndex + 1)] = p1;
+            data[2*(vertexIndex + 2)] = p2;
 
-            *((Vec3D*)&data[(vertexIndex + 3)*stride]) = p0;
-            *((Vec3D*)&data[(vertexIndex + 4)*stride]) = p2;
-            *((Vec3D*)&data[(vertexIndex + 5)*stride]) = p3;
+            data[2*(vertexIndex + 3)] = p0;
+            data[2*(vertexIndex + 4)] = p2;
+            data[2*(vertexIndex + 5)] = p3;
 
             Vec3D sp10 = subtractVectorVector(p0, p1);
             Vec3D sp12 = subtractVectorVector(p2, p1);
             Vec3D sp30 = subtractVectorVector(p0, p3);
             Vec3D sp32 = subtractVectorVector(p2, p3);
 
-            //Vec3D n1 = mlUnitCross(sp12, sp10);
+// Hier noch +1 rechnen, weil die Normale einen Vec3D weiter liegt.
             Vec3D n1 = crossProduct3D(sp12, sp10);
-            *((Vec3D*)&data[(vertexIndex + 0)*stride + sizeof(Vec3D)]) = n1;
-            *((Vec3D*)&data[(vertexIndex + 1)*stride + sizeof(Vec3D)]) = n1;
-            *((Vec3D*)&data[(vertexIndex + 2)*stride + sizeof(Vec3D)]) = n1;
+            data[2*(vertexIndex + 0) + 1] = n1;
+            data[2*(vertexIndex + 1) + 1] = n1;
+            data[2*(vertexIndex + 2) + 1] = n1;
 
-            //Vec3D n2 = mlUnitCross(sp30, sp32);
             Vec3D n2 = crossProduct3D(sp30, sp32);
-            *((Vec3D*)&data[(vertexIndex + 3)*stride + sizeof(Vec3D)]) = n2;
-            *((Vec3D*)&data[(vertexIndex + 4)*stride + sizeof(Vec3D)]) = n2;
-            *((Vec3D*)&data[(vertexIndex + 5)*stride + sizeof(Vec3D)]) = n2;
+            data[2*(vertexIndex + 3) + 1] = n2;
+            data[2*(vertexIndex + 4) + 1] = n2;
+            data[2*(vertexIndex + 5) + 1] = n2;
 
             vertexIndex += 6;
         }
@@ -85,13 +87,15 @@ void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Ve
 }
 
 void createUnitCubeVertices(int numSubdivisions, Vec3D* data) {
-    int byteSizePerSide = numSubdivisions*numSubdivisions*6*(sizeof(Vec3D) + sizeof(Vec3D));
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1,  1), toVector3D( 1, -1,  1), toVector3D( 1,  1,  1), toVector3D(-1,  1,  1), data + 0*byteSizePerSide); // Front
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D(-1, -1,  1), toVector3D(-1,  1,  1), toVector3D(-1,  1, -1), data + 1*byteSizePerSide); // Left
-    createSurfaceVertices(numSubdivisions, toVector3D( 1, -1,  1), toVector3D( 1, -1, -1), toVector3D( 1,  1, -1), toVector3D( 1,  1,  1), data + 2*byteSizePerSide); // Right
-    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1,  1), toVector3D( 1,  1,  1), toVector3D( 1,  1, -1), toVector3D(-1,  1, -1), data + 3*byteSizePerSide); // Top
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D( 1, -1, -1), toVector3D( 1, -1,  1), toVector3D(-1, -1,  1), data + 4*byteSizePerSide); // Bottom
-    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1, -1), toVector3D( 1,  1, -1), toVector3D( 1, -1, -1), toVector3D(-1, -1, -1), data + 5*byteSizePerSide); // Back
+// Hier das offset jetzt auch nicht mehr auf byte-Basis, sondern auf basis von Vec3D
+    int verticesPerSide = numSubdivisions*numSubdivisions*6;
+    int vec3dsPerSide = 2*verticesPerSide;
+    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1,  1), toVector3D( 1, -1,  1), toVector3D( 1,  1,  1), toVector3D(-1,  1,  1), data + 0*vec3dsPerSide); // Front
+    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D(-1, -1,  1), toVector3D(-1,  1,  1), toVector3D(-1,  1, -1), data + 1*vec3dsPerSide); // Left
+    createSurfaceVertices(numSubdivisions, toVector3D( 1, -1,  1), toVector3D( 1, -1, -1), toVector3D( 1,  1, -1), toVector3D( 1,  1,  1), data + 2*vec3dsPerSide); // Right
+    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1,  1), toVector3D( 1,  1,  1), toVector3D( 1,  1, -1), toVector3D(-1,  1, -1), data + 3*vec3dsPerSide); // Top
+    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D( 1, -1, -1), toVector3D( 1, -1,  1), toVector3D(-1, -1,  1), data + 4*vec3dsPerSide); // Bottom
+    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1, -1), toVector3D( 1,  1, -1), toVector3D( 1, -1, -1), toVector3D(-1, -1, -1), data + 5*vec3dsPerSide); // Back
 }
 
 Geometry createSurface(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D v3) {
@@ -121,6 +125,11 @@ Geometry createSurface(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D 
 
     return geometry;
 }
+
+
+
+
+
 
 Geometry createUnitCube(int numSubdivisions) {
     int numVerticesPerSide = 6*numSubdivisions*numSubdivisions;
@@ -163,7 +172,7 @@ Geometry createUnitSphere(int numSubdivisions) {
 
     for (int i = 0; i < numVertices; ++i) {
         // Cubical position
-        Vec3D c = *(Vec3D*)&data[i * byteSizeVertex];
+        Vec3D c = data[2*i];
 
         // Spherical position
         Vec3D s;
@@ -171,10 +180,10 @@ Geometry createUnitSphere(int numSubdivisions) {
         s.y = c.y * sqrt(1.0f - (c.z * c.z) / 2.0f - (c.x * c.x) / 2.0f + (c.z * c.z * c.x * c.x) / 3.0f);
         s.z = c.z * sqrt(1.0f - (c.x * c.x) / 2.0f - (c.y * c.y) / 2.0f + (c.x * c.x * c.y * c.y) / 3.0f);
 
-        *((Vec3D*)&data[i * byteSizeVertex]) = s;
+        data[2*i] = s;
 
         // Die Normale ist gleich der Position
-        *((Vec3D*)&data[i * byteSizeVertex + sizeof(Vec3D)]) = s;
+        data[2*i + 1] = s;
     }
 
     Geometry geometry;

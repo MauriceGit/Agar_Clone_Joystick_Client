@@ -16,5 +16,5 @@ g++ -W -O3 -c -I./ ./tinythread.cpp
 echo "--> compile easywsclient:"
 g++ -c easywsclient.cpp -o easywsclient.o
 echo "--> linking everything:"
-g++ -L/usr/X11R6/lib64 -o "$programName" sphere.o vector.o logic.o test.o tinythread.o easywsclient.o -lz `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread
+g++ -L/usr/X11R6/lib64 -o "$programName" sphere.o vector.o logic.o test.o tinythread.o easywsclient.o `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread
 rm -f *.o

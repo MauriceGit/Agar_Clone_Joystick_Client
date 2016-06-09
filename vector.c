@@ -18,18 +18,17 @@
 
 /* ---- Eigene Header einbinden ---- */
 #include "types.h"
+#include "vector.h"
 
 
 /**
  * Printet einen Vector aus.
  */
-void printVector (CGVector3D a)
+void printVector (Vec3D a)
 {
     int i;
-    printf("\nprintVector:\n");
-    for (i=0;i<3;i++)
-        printf("%.1f\n", a[i]);
-    printf("\n");
+    printf("printVector:\n");
+    printf("[%.1f/%.1f/%.1f]\n", a.x, a.y, a.z);
 }
 
 /**
@@ -39,11 +38,13 @@ void printVector (CGVector3D a)
  * @param y
  * @param z
  */
-void toVector3D(CGVector3D vector, GLfloat x, GLfloat y, GLfloat z)
+Vec3D toVector3D(GLfloat x, GLfloat y, GLfloat z)
 {
-  vector[0] = x;
-  vector[1] = y;
-  vector[2] = z;
+    Vec3D res;
+    res.x = x;
+    res.y = y;
+    res.z = z;
+    return res;
 }
 
 /**
@@ -51,11 +52,11 @@ void toVector3D(CGVector3D vector, GLfloat x, GLfloat y, GLfloat z)
  * @param v
  *@return float
  */
-float vectorLength3D(CGVector3D vector)
+float vectorLength3D(Vec3D vector)
 {
-  return sqrt((vector[0]*vector[0])+
-              (vector[1]*vector[1])+
-              (vector[2]*vector[2]));
+  return sqrt((vector.x*vector.x)+
+              (vector.y*vector.y)+
+              (vector.z*vector.z));
 }
 
 /**
@@ -63,11 +64,12 @@ float vectorLength3D(CGVector3D vector)
  * @param v der zu normierende Vektor
  * @return der normierte Vektor
  */
-void normVector3D(CGVector3D vector)
+Vec3D normVector3D(Vec3D vector)
 {
-  float l = vectorLength3D(vector);
-  if (l != .0f)
-    toVector3D(vector, vector[0]/l, vector[1]/l, vector[2]/l);
+    float l = vectorLength3D(vector);
+    if (l >= .00001f)
+        return toVector3D(vector.x/l, vector.y/l, vector.z/l);
+    return vector;
 }
 
 /**
@@ -76,68 +78,61 @@ void normVector3D(CGVector3D vector)
  * @param
  * @return
  */
-void crossProduct3D(CGVector3D product, CGVector3D a, CGVector3D b)
+Vec3D crossProduct3D(Vec3D a, Vec3D b)
 {
-  toVector3D(product, (a[1]*b[2] - a[2]*b[1]),
-                      (a[2]*b[0] - a[0]*b[2]),
-                      (a[0]*b[1] - a[1]*b[0]));
-}
-
-/**
- * Multipliziert zwei Vektoren miteinander (Skalarprodukt)
- */
-double multiplyVectorVector (CGVector3D a, CGVector3D b)
-{
-    int i;
-    double res = 0.0;
-    for (i=0;i<3;i++)
-        res += a[i]*b[i];
-    return res;
+    Vec3D product = toVector3D((a.x*b.z - a.z*b.y),
+                      (a.z*b.x - a.x*b.z),
+                      (a.x*b.y - a.y*b.x));
+    return product;
 }
 
 /**
  * Multipliziert einen Vektor mit einem Skalar.
  */
-void multiplyVectorScalar (CGVector3D a, double s, CGVector3D * res)
+Vec3D multiplyVectorScalar (Vec3D a, double s)
 {
-    int i;
-    for (i=0;i<3;i++)
-        (*res)[i] = a[i]*s;
+    Vec3D res;
+    res.x = a.x * s;
+    res.y = a.y * s;
+    res.z = a.z * s;
+    return res;
 }
 
-double scalarProduct (CGVector3D a, CGVector3D b)
+double scalarProduct (Vec3D a, Vec3D b)
 {
-    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+    return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
 /**
  * Zieht b von a ab, also: a-b
  */
-void subtractVectorVector (CGVector3D a, CGVector3D b, CGVector3D * res)
+Vec3D subtractVectorVector (Vec3D a, Vec3D b)
 {
-    int i;
-    for (i=0;i<3;i++)
-        (*res)[i] = a[i] - b[i];
+    Vec3D res;
+    res.x = a.x - b.x;
+    res.y = a.y - b.y;
+    res.z = a.z - b.z;
+    return res;
 }
 
 /**
  * Teilt den Vector a durch s.
  */
-void divideVectorScalar (CGVector3D a, double s, CGVector3D * res)
+Vec3D divideVectorScalar (Vec3D a, double s)
 {
-    int i;
-    for (i=0;i<3;i++)
-        (*res)[i] = a[i] / s;
+    return multiplyVectorScalar(a, 1.0/s);
 }
 
 /**
  * Addiert a und b und schreibt das Ergebnis in res.
  */
-void addVectorVector (CGVector3D a, CGVector3D b, CGVector3D * res)
+Vec3D addVectorVector (Vec3D a, Vec3D b)
 {
-    int i;
-    for (i=0;i<3;i++)
-        (*res)[i] = a[i] + b[i];
+    Vec3D res;
+    res.x = a.x + b.x;
+    res.y = a.y + b.y;
+    res.z = a.z + b.z;
+    return res;
 }
 
 /**
@@ -162,9 +157,9 @@ double radToDeg (double rad)
  * Berechnet den Winkel zwischen zwei Vektoren und gibt das Ergebnis in
  * ° zurück (nicht radiant!).
  */
-double angleVectorVector (CGVector3D a, CGVector3D b)
+double angleVectorVector (Vec3D a, Vec3D b)
 {
-    return radToDeg (acos (multiplyVectorVector (a, b) / (vectorLength3D(a)*vectorLength3D(b))));
+    return radToDeg (acos (scalarProduct(a, b) / (vectorLength3D(a)*vectorLength3D(b))));
 }
 
 

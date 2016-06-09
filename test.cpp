@@ -11,6 +11,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "logic.h"
+#include "sphere.h"
 
 using easywsclient::WebSocket;
 using namespace tthread;
@@ -103,6 +104,7 @@ GLfloat G_Objects[] = {
     15.0, 15.0, -15.0,
     -15.0, 15.0, -15.0
 };
+Geometry G_Sphere;
 
 /*
  * =====================================================================
@@ -179,6 +181,10 @@ void handle_message(const std::string & message)
 void handleWSData(void * aArg) {
 
     WebSocket::pointer ws = WebSocket::from_url(G_WSAddress);
+    if (!ws) {
+        printf("The websocket could not be initialised. The websocket thread exits.\n");
+        return;
+    }
     assert(ws);
     while (ws->getReadyState() != WebSocket::CLOSED) {
         ws->poll();
@@ -225,6 +231,28 @@ void drawColoredQuad(GLfloat r, GLfloat g, GLfloat b) {
     glEnable(GL_CULL_FACE);
 }
 
+void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
+    glDisable(GL_CULL_FACE);
+    glUseProgram(G_ShaderColor);
+        GLfloat mp[16], mv[16];
+        glGetFloatv(GL_PROJECTION_MATRIX, mp);
+        glGetFloatv(GL_MODELVIEW_MATRIX, mv);
+        glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "projMatrix"),  1, GL_FALSE, &mp[0]);
+        glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
+
+        GLfloat color[] = {r, g, b};
+        GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color);
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
+
+        glBindVertexArray(G_Sphere.vertexArrayObject);
+        glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+        glBindVertexArray(0);
+
+    glUseProgram(0);
+    glEnable(GL_CULL_FACE);
+}
+
 void cbDisplay (GLFWwindow * window)
 {
     int i;
@@ -244,7 +272,8 @@ void cbDisplay (GLFWwindow * window)
          0.0, 0.0, 0.0,
          0.0, 1.0, 0.0);
 
-    drawColoredQuad(1,0,0);
+    //drawColoredQuad(1,0,0);
+    drawColoredSphere(1,0,0);
 
     /* fuer DoubleBuffering */
     glfwSwapBuffers(window);
@@ -532,7 +561,8 @@ int initAndStartIO (char* title, int width, int height)
         }
         printf("Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 
-        initScene ();
+        initScene();
+        initGame();
 
         G_ShaderColor = loadShaders("colorVertexShader.vert", "colorFragmentShader.frag");
 
@@ -542,6 +572,12 @@ int initAndStartIO (char* title, int width, int height)
         glBindBuffer(GL_ARRAY_BUFFER, G_ObjectsBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(G_Objects), G_Objects, GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        printf("before sphere\n"); fflush(stdout);
+        G_Sphere = createUnitSphere(10);
+        printf("after sphere\n"); fflush(stdout);
+        //Geometry cube = createUnitCube(3);
+        //printf("after cube\n"); fflush(stdout);
 
         printf ("--> Initialisation finished\n"); fflush(stdout);
 

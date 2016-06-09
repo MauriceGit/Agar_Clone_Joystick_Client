@@ -22,11 +22,11 @@
 /** Mausbewegung zoom/move/none */
 MouseInterpretType G_Mouse;
 /** Kameraposition */
-CGVector3D G_CameraPosition = {CAMERA_X,CAMERA_Y,CAMERA_Z};
+Vec3D G_CameraPosition;
 /** Position der Maus */
-Movement G_MouseMove = {0.0,0.0,0.0};
+Movement G_MouseMove = {0,0,0};
 /** Startpunkt der Mausbewegung */
-CGVector3D G_LastMouseCenter = {0.0,0.0,0.0};
+Vec3D G_LastMouseCenter;
 
 /** Partikel hinzufügen? */
 int G_UpDownKeys[2] = {0,0};
@@ -61,8 +61,8 @@ void setKey (int key, int value)
 void setMouseEvent(MouseInterpretType state,int x, int y) {
     G_MouseMove[0] = 0.0;
     G_MouseMove[2] = 0.0;
-    G_LastMouseCenter[0] = x;
-    G_LastMouseCenter[2] = y;
+    G_LastMouseCenter.x = x;
+    G_LastMouseCenter.z = y;
 
     G_Mouse = state;
 }
@@ -75,8 +75,8 @@ void setMouseState(MouseInterpretType state) {
 }
 
 void setMouseCoord(int x, int y) {
-    G_LastMouseCenter[0] = x;
-    G_LastMouseCenter[2] = y;
+    G_LastMouseCenter.x = x;
+    G_LastMouseCenter.z = y;
 }
 
 /**
@@ -92,9 +92,11 @@ MouseInterpretType getMouseEvent() {
  */
 double getCameraPosition (int axis)
 {
-    if (axis >= 0 && axis < 3)
-        return G_CameraPosition[axis];
-
+    switch (axis) {
+        case 0: return G_CameraPosition.x;
+        case 1: return G_CameraPosition.y;
+        case 2: return G_CameraPosition.z;
+    }
     return 0.0;
 }
 
@@ -103,27 +105,23 @@ double getCameraPosition (int axis)
  */
 void setCameraMovement(int x,int y)
 {
-    CGVector3D tmp;
+    Vec3D tmp = toVector3D(G_CameraPosition.x, G_CameraPosition.y,G_CameraPosition.z);
     double factor, radius = vectorLength3D(G_CameraPosition);
 
-    tmp[0] = G_CameraPosition[0];
-    tmp[1] = G_CameraPosition[1];
-    tmp[2] = G_CameraPosition[2];
+    G_MouseMove[0] = x-G_LastMouseCenter.x;
+    G_MouseMove[2] = y-G_LastMouseCenter.z;
 
-    G_MouseMove[0] = x-G_LastMouseCenter[0];
-    G_MouseMove[2] = y-G_LastMouseCenter[2];
-
-    G_LastMouseCenter[0] = x;
-    G_LastMouseCenter[2] = y;
+    G_LastMouseCenter.x = x;
+    G_LastMouseCenter.z = y;
 
     /* Bewegung um Y-Achse: */
-    G_CameraPosition[0] = cos(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp[0] + sin(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp[2];
-    G_CameraPosition[2] = -sin(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp[0] + cos(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp[2];
+    G_CameraPosition.x = cos(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.x + sin(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.z;
+    G_CameraPosition.z = -sin(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.x + cos(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.z;
 
     /* Bewegung oben/unten */
-    G_CameraPosition[1] += G_MouseMove[2]/(CAMERA_MOVEMENT_SPEED/2)*(vectorLength3D(G_CameraPosition)/100.0);
+    G_CameraPosition.y += G_MouseMove[2]/(CAMERA_MOVEMENT_SPEED/2)*(vectorLength3D(G_CameraPosition)/100.0);
     factor = 1.0 / (vectorLength3D(G_CameraPosition) / radius);
-    multiplyVectorScalar (G_CameraPosition, factor, &G_CameraPosition);
+    G_CameraPosition = multiplyVectorScalar (G_CameraPosition, factor);
 
 }
 
@@ -134,15 +132,13 @@ void setCameraZoom(int x,int y)
 {
     double factor = 1.0 + (CAMERA_ZOOM_SPEED / 1000.0) * ((G_MouseMove[2] < 0.0) ? -1.0 : 1.0);
 
-    G_MouseMove[0] = x-G_LastMouseCenter[0];
-    G_MouseMove[2] = y-G_LastMouseCenter[2];
+    G_MouseMove[0] = x-G_LastMouseCenter.x;
+    G_MouseMove[2] = y-G_LastMouseCenter.z;
 
-    G_LastMouseCenter[0] = x;
-    G_LastMouseCenter[2] = y;
+    G_LastMouseCenter.x = x;
+    G_LastMouseCenter.z = y;
 
-    G_CameraPosition[0] *= factor;
-    G_CameraPosition[1] *= factor;
-    G_CameraPosition[2] *= factor;
+    G_CameraPosition = multiplyVectorScalar(G_CameraPosition, factor);
 }
 
 /* ------- BERECHNUNGEN ------- */
@@ -169,9 +165,9 @@ void calcTimeRelatedStuff (double interval)
  */
 void initCameraPosition ()
 {
-    G_CameraPosition[0] = CAMERA_X;
-    G_CameraPosition[1] = CAMERA_Y;
-    G_CameraPosition[2] = CAMERA_Z;
+    G_CameraPosition.x = CAMERA_X;
+    G_CameraPosition.y = CAMERA_Y;
+    G_CameraPosition.z = CAMERA_Z;
 }
 
 /**
@@ -180,7 +176,7 @@ void initCameraPosition ()
  */
 void initGame ()
 {
+    G_LastMouseCenter = toVector3D(0,0,0);
     initCameraPosition();
-    /*setRandomize();*/
 }
 

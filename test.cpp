@@ -246,9 +246,37 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color);
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
 
-        glBindVertexArray(G_Sphere.vertexArrayObject);
-        glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
-        glBindVertexArray(0);
+        //GLfloat translation[] = {5, 0, 0};
+        //glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+
+        //glBindVertexArray(G_Sphere.vertexArrayObject);
+        //glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+        //glBindVertexArray(0);
+
+        for(auto toxinIt = G_ToxinMap.begin(); toxinIt != G_ToxinMap.end(); toxinIt++) {
+            Toxin* toxin = toxinIt->second;
+
+            GLfloat translation[] = {GLfloat(-50.0 + toxin->posx/10.0), 0, GLfloat(-50.0 + toxin->posy/10.0)};
+            glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+
+            glBindVertexArray(G_Sphere.vertexArrayObject);
+            glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+            glBindVertexArray(0);
+        }
+        GLfloat color2[] = {0, 1, 0};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color2);
+        for(auto foodIt = G_FoodMap.begin(); foodIt != G_FoodMap.end(); foodIt++) {
+            Food* food = foodIt->second;
+
+            GLfloat translation[] = {GLfloat(-50.0 + food->posx/10.0), 0, GLfloat(-50.0 + food->posy/10.0)};
+            glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+
+            glBindVertexArray(G_Sphere.vertexArrayObject);
+            glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+            glBindVertexArray(0);
+        }
+
+
 
     glUseProgram(0);
     glEnable(GL_CULL_FACE);

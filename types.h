@@ -27,9 +27,9 @@
 
 #define GROUND_HEIGHT   0.3
 
-#define CAMERA_X        -1.1
-#define CAMERA_Y        1.0
-#define CAMERA_Z        2.0
+#define CAMERA_X        -30.0
+#define CAMERA_Y        30.0
+#define CAMERA_Z        70.0
 #define CAMERA_SPEED    15.0
 
 #define CAMERA_MOVEMENT_SPEED   4.0

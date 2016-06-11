@@ -23,7 +23,37 @@ using json = nlohmann::json;
  * GLOBAL STUFF FOR WEBSOCKET SECTION
  * =====================================================================
  */
+class Color {
+    public:
+        float r,g,b;
+        Color(float r, float g, float b) {
+            this->r = r;
+            this->g = g;
+            this->b = b;
+        }
+        ~Color(){}
+        Color(Color & c) {
+            r = c.r;
+            g = c.g;
+            b = c.b;
+        }
+};
+class BotInfo {
+    public:
+        Color* color;
+        string name;
 
+        BotInfo(Color* color, string name){
+            this->color = color;
+            this->name = name;
+        }
+        ~BotInfo(){}
+        BotInfo(BotInfo & bi){
+            color = bi.color;
+            name = bi.name;
+        }
+
+};
 class Food {
     public:
         int posx, posy;
@@ -76,11 +106,13 @@ class Bot {
 };
 
 int G_global_data = 0;
+//char G_WSAddress[] = "ws://192.168.2.187:1234";
 char G_WSAddress[] = "ws://127.0.0.1:1234";
 
-map <int, Food*>  G_FoodMap;
-map <int, Toxin*> G_ToxinMap;
-map <int, Bot*>   G_BotMap;
+map <int, Food*>    G_FoodMap;
+map <int, Toxin*>   G_ToxinMap;
+map <int, Bot*>     G_BotMap;
+map <int, BotInfo*> G_BotInfoMap;
 
 /*
  * =====================================================================
@@ -129,7 +161,7 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
-        G_FoodMap[int(key)] = (Food*)(new Food(posx, posy, mass));
+        G_FoodMap[key] = new Food(posx, posy, mass);
     }
     for (int i : j["deletedFoods"]) {
         delete G_FoodMap[i];
@@ -144,7 +176,7 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
-        G_ToxinMap[int(key)] = (Toxin*)(new Toxin(posx, posy, mass));
+        G_ToxinMap[key] = new Toxin(posx, posy, mass);
     }
     for (int i : j["deletedToxins"]) {
         delete G_ToxinMap[i];
@@ -153,30 +185,51 @@ void handle_message(const std::string & message)
 
     map<string, json> bots = j["createdOrUpdatedBots"];
     for (auto&& kv : bots) {
-
         Bot* bot = new Bot();
-
         int botId = stoi(kv.first);
         std::map<string, json> blobs = (kv.second)["blobs"];
+
         for (auto&& kv2 : blobs) {
             int blobId = stoi(kv2.first);
-            int posx =   (kv.second)["pos"]["X"].get<int>();
-            int posy =   (kv.second)["pos"]["Y"].get<int>();
-            float mass = (kv.second)["mass"].get<float>();
-            bot->blobMap[int(blobId)] = (Blob*)(new Blob(posx, posy, mass));
-        }
 
+            int posx =   (kv2.second)["pos"]["X"].get<int>();
+            int posy =   (kv2.second)["pos"]["Y"].get<int>();
+            float mass = (kv2.second)["mass"].get<float>();
+            bot->blobMap[blobId] = new Blob(posx, posy, mass);
+        }
         // overwrite old entries
-        G_BotMap[int(botId)] = (Bot*)(bot);
+        G_BotMap[int(botId)] = bot;
     }
     for (int i : j["deletedBots"]) {
-        map<int, Blob*> blobs = G_BotMap[i]->blobMap;
+        Bot* bot = G_BotMap[i];
+        if (!bot) {
+            continue;
+        }
+        map<int, Blob*> blobs = bot->blobMap;
         for (auto b : blobs) {
             delete b.second;
         }
-        delete G_BotMap[i];
+        delete bot;
         G_BotMap.erase(i);
     }
+
+    map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
+    for (auto&& kv : botInfos) {
+        int key = stoi(kv.first);
+        Color* c = new Color((kv.second)["color"]["R"].get<int>(), (kv.second)["color"]["G"].get<int>(), (kv.second)["color"]["B"].get<int>());
+        string name = (kv.second)["name"].get<string>();
+        G_BotInfoMap[key] = new BotInfo(c, name);
+    }
+    for (int i : j["deletedBotInfos"]) {
+        BotInfo* bi = G_BotInfoMap[i];
+        if (!bi) {
+            continue;
+        }
+        delete bi->color;
+        delete bi;
+        G_BotInfoMap.erase(i);
+    }
+
 }
 
 void handleWSData(void * aArg) {
@@ -241,39 +294,63 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "projMatrix"),  1, GL_FALSE, &mp[0]);
         glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
 
-        GLfloat color[] = {r, g, b};
         GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color);
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
 
-        //GLfloat translation[] = {5, 0, 0};
-        //glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
-
-        //glBindVertexArray(G_Sphere.vertexArrayObject);
-        //glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
-        //glBindVertexArray(0);
-
+        GLfloat scale = 1.0;
+        // To put the field from -500/500 and not 0/1000.
+        GLfloat displacement = -500.0;
+        // Toxin
+        GLfloat colorToxin[] = {r, g, b};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);
         for(auto toxinIt = G_ToxinMap.begin(); toxinIt != G_ToxinMap.end(); toxinIt++) {
             Toxin* toxin = toxinIt->second;
 
-            GLfloat translation[] = {GLfloat(-50.0 + toxin->posx/10.0), 0, GLfloat(-50.0 + toxin->posy/10.0)};
+            GLfloat translation[] = {GLfloat(displacement + toxin->posx * scale), 0, GLfloat(displacement + toxin->posy * scale)};
             glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+            GLfloat mass[] = {toxin->mass};
+            glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
 
             glBindVertexArray(G_Sphere.vertexArrayObject);
             glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
             glBindVertexArray(0);
         }
-        GLfloat color2[] = {0, 1, 0};
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color2);
+
+        // Food
+        GLfloat colorFood[] = {0, 1, 0};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorFood);
         for(auto foodIt = G_FoodMap.begin(); foodIt != G_FoodMap.end(); foodIt++) {
             Food* food = foodIt->second;
 
-            GLfloat translation[] = {GLfloat(-50.0 + food->posx/10.0), 0, GLfloat(-50.0 + food->posy/10.0)};
+            GLfloat translation[] = {GLfloat(displacement + food->posx * scale), 0, GLfloat(displacement + food->posy * scale)};
             glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+            GLfloat mass[] = {food->mass};
+            glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
 
             glBindVertexArray(G_Sphere.vertexArrayObject);
             glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
             glBindVertexArray(0);
+        }
+
+        // Blobs
+        for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
+            Bot* bot = botIt->second;
+            BotInfo* botInfo = G_BotInfoMap[botIt->first];
+            GLfloat colorBot[] = {GLfloat(botInfo->color->r/255.0), GLfloat(botInfo->color->g/255.0), GLfloat(botInfo->color->b/255.0)};
+            glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorBot);
+            for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
+                Blob* blob = blobIt->second;
+
+                GLfloat translation[] = {GLfloat(displacement + blob->posx * scale), 0, GLfloat(displacement + blob->posy * scale)};
+                glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+                GLfloat mass[] = {blob->mass};
+                glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
+
+                glBindVertexArray(G_Sphere.vertexArrayObject);
+                glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+                glBindVertexArray(0);
+            }
+
         }
 
 
@@ -410,7 +487,7 @@ void setProjection (GLdouble aspect)
 {
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity ();
-    gluPerspective (90.0, aspect, 0.01, 1000.0 );
+    gluPerspective (90.0, aspect, 1.0, 100000.0 );
 }
 
 void cbReshape (GLFWwindow* window, int w, int h)
@@ -592,7 +669,6 @@ int initAndStartIO (char* title, int width, int height)
 
         initScene();
         initGame();
-
         G_ShaderColor = loadShaders("colorVertexShader.vert", "colorFragmentShader.frag");
 
         registerCallBacks (G_Window);
@@ -602,11 +678,7 @@ int initAndStartIO (char* title, int width, int height)
         glBufferData(GL_ARRAY_BUFFER, sizeof(G_Objects), G_Objects, GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        printf("before sphere\n"); fflush(stdout);
-        G_Sphere = createUnitSphere(10);
-        printf("after sphere\n"); fflush(stdout);
-        G_Cube = createUnitCube(10);
-        //printf("after cube\n"); fflush(stdout);
+        G_Sphere = createUnitSphere(5);
 
         printf ("--> Initialisation finished\n"); fflush(stdout);
 

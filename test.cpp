@@ -109,6 +109,7 @@ class Bot {
         }
 };
 
+int G_wsCounter = 0;
 int G_global_data = 0;
 //char G_WSAddress[] = "ws://192.168.2.187:1234";
 char G_WSAddress[] = "ws://127.0.0.1:1234";
@@ -124,6 +125,7 @@ map <int, BotInfo*> G_BotInfoMap;
  * =====================================================================
  */
 
+int G_openGLCounter = 0;
 double G_Interval;
 int G_Width;
 int G_Height;
@@ -151,11 +153,14 @@ Geometry G_Cube;
 
 void handle_message(const std::string & message)
 {
+
     if (!message.compare("alive_test")) {
         return;
     }
+    printf("1\n"); fflush(stdout);
 
     json j = json::parse(message);
+    printf("2\n"); fflush(stdout);
 
     map<string, json> foods = j["createdOrUpdatedFoods"];
     for (auto&& kv : foods) {
@@ -167,11 +172,13 @@ void handle_message(const std::string & message)
         // overwrite old entries
         G_FoodMap[key] = new Food(posx, posy, mass);
     }
+    printf("3\n"); fflush(stdout);
+
     for (int i : j["deletedFoods"]) {
         delete G_FoodMap[i];
         G_FoodMap.erase(i);
     }
-
+    printf("4\n"); fflush(stdout);
     map<string, json> toxins = j["createdOrUpdatedToxins"];
     for (auto&& kv : toxins) {
         int key = stoi(kv.first);
@@ -182,16 +189,19 @@ void handle_message(const std::string & message)
         // overwrite old entries
         G_ToxinMap[key] = new Toxin(posx, posy, mass);
     }
+    printf("5\n"); fflush(stdout);
+
     for (int i : j["deletedToxins"]) {
         delete G_ToxinMap[i];
         G_ToxinMap.erase(i);
     }
+    printf("6\n"); fflush(stdout);
 
     map<string, json> bots = j["createdOrUpdatedBots"];
     for (auto&& kv : bots) {
-        Bot* bot = new Bot();
         int botId = stoi(kv.first);
-        std::map<string, json> blobs = (kv.second)["blobs"];
+        Bot* bot = new Bot();
+        std::map<string, json> blobs = (kv.second)["blobs"]; // Possible seg-fault here (Why??)
 
         for (auto&& kv2 : blobs) {
             int blobId = stoi(kv2.first);
@@ -199,24 +209,28 @@ void handle_message(const std::string & message)
             int posx =   (kv2.second)["pos"]["X"].get<int>();
             int posy =   (kv2.second)["pos"]["Y"].get<int>();
             float mass = (kv2.second)["mass"].get<float>();
+
             bot->blobMap[blobId] = new Blob(posx, posy, mass);
+
         }
-        // overwrite old entries
-        G_BotMap[int(botId)] = bot;
-    }
-    for (int i : j["deletedBots"]) {
-        Bot* bot = G_BotMap[i];
-        if (!bot) {
-            continue;
-        }
-        map<int, Blob*> blobs = bot->blobMap;
-        for (auto b : blobs) {
-            delete b.second;
-        }
-        delete bot;
-        G_BotMap.erase(i);
+        G_BotMap[botId] = bot;
     }
 
+    printf("7\n"); fflush(stdout);
+
+    for (int i : j["deletedBots"]) {
+        Bot* bot = G_BotMap[i];
+        if (bot) {
+            map<int, Blob*> blobs = bot->blobMap;
+            for (auto b : blobs) {
+                delete b.second;
+                blobs.erase(b.first);
+            }
+            delete bot;
+            G_BotMap.erase(i);
+        }
+    }
+    printf("8\n"); fflush(stdout);
     map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
     for (auto&& kv : botInfos) {
         int key = stoi(kv.first);
@@ -224,26 +238,30 @@ void handle_message(const std::string & message)
         string name = (kv.second)["name"].get<string>();
         G_BotInfoMap[key] = new BotInfo(c, name);
     }
+    printf("9\n"); fflush(stdout);
     for (int i : j["deletedBotInfos"]) {
         BotInfo* bi = G_BotInfoMap[i];
-        if (!bi) {
-            continue;
+        if (bi) {
+            delete bi->color;
+            delete bi;
+            G_BotInfoMap.erase(i);
         }
-        delete bi->color;
-        delete bi;
-        G_BotInfoMap.erase(i);
     }
-
+    printf("10\n"); fflush(stdout);
 }
 
 void handleWSData(void * aArg) {
 
-    if (0) {
+    if (1) {
         WsClient client("localhost:1234");
         client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
 
             //auto message_str=message->string();
             handle_message(message->string());
+            G_wsCounter++;
+            if (G_wsCounter % 100 == 0) {
+                //printf("G_wsCounter == %i\n", G_wsCounter);
+            }
             //cout << "Client: Message received: \"" << message_str << "\"" << endl;
         };
 
@@ -271,6 +289,10 @@ void handleWSData(void * aArg) {
         while (ws->getReadyState() != WebSocket::CLOSED) {
             ws->poll();
             ws->dispatch(handle_message);
+            G_wsCounter++;
+            if (G_wsCounter % 100 == 0) {
+                //printf("G_wsCounter == %i\n", G_wsCounter);
+            }
         }
         delete ws;
     }
@@ -582,6 +604,10 @@ void mainLoop (GLFWwindow * window)
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
         glfwPollEvents();
+        G_openGLCounter++;
+        if (G_openGLCounter % 100 == 0) {
+            //printf("Average Draw call per Websocket message: %.2f\n", G_openGLCounter / (float)G_wsCounter);
+        }
     }
 
 }

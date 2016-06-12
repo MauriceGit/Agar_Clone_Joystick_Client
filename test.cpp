@@ -3,6 +3,7 @@
 #include "json.hpp"
 #include "tinythread.h"
 #include "fast_mutex.h"
+//#include <mutex.h>
 #include "easywsclient.hpp"
 #include <unordered_map>
 #include <map>
@@ -119,6 +120,8 @@ map <int, Toxin*>   G_ToxinMap;
 map <int, Bot*>     G_BotMap;
 map <int, BotInfo*> G_BotInfoMap;
 
+mutex G_m;
+
 /*
  * =====================================================================
  * GLOBAL STUFF FOR GRAPHICS SECTION
@@ -157,10 +160,10 @@ void handle_message(const std::string & message)
     if (!message.compare("alive_test")) {
         return;
     }
-    printf("1\n"); fflush(stdout);
+    //printf("1\n"); fflush(stdout);
 
     json j = json::parse(message);
-    printf("2\n"); fflush(stdout);
+    //printf("2\n"); fflush(stdout);
 
     map<string, json> foods = j["createdOrUpdatedFoods"];
     for (auto&& kv : foods) {
@@ -172,13 +175,13 @@ void handle_message(const std::string & message)
         // overwrite old entries
         G_FoodMap[key] = new Food(posx, posy, mass);
     }
-    printf("3\n"); fflush(stdout);
+    //printf("3\n"); fflush(stdout);
 
     for (int i : j["deletedFoods"]) {
         delete G_FoodMap[i];
         G_FoodMap.erase(i);
     }
-    printf("4\n"); fflush(stdout);
+    //printf("4\n"); fflush(stdout);
     map<string, json> toxins = j["createdOrUpdatedToxins"];
     for (auto&& kv : toxins) {
         int key = stoi(kv.first);
@@ -189,34 +192,38 @@ void handle_message(const std::string & message)
         // overwrite old entries
         G_ToxinMap[key] = new Toxin(posx, posy, mass);
     }
-    printf("5\n"); fflush(stdout);
+    //printf("5\n"); fflush(stdout);
 
     for (int i : j["deletedToxins"]) {
         delete G_ToxinMap[i];
         G_ToxinMap.erase(i);
     }
-    printf("6\n"); fflush(stdout);
+    //printf("6\n"); fflush(stdout);
+
+    G_m.lock();
 
     map<string, json> bots = j["createdOrUpdatedBots"];
+    //printf("6a\n"); fflush(stdout);
     for (auto&& kv : bots) {
         int botId = stoi(kv.first);
         Bot* bot = new Bot();
         std::map<string, json> blobs = (kv.second)["blobs"]; // Possible seg-fault here (Why??)
-
+        //printf("6b\n"); fflush(stdout);
         for (auto&& kv2 : blobs) {
             int blobId = stoi(kv2.first);
-
+            //printf("6c\n"); fflush(stdout);
+            //cout << kv2.second << "\n";
             int posx =   (kv2.second)["pos"]["X"].get<int>();
             int posy =   (kv2.second)["pos"]["Y"].get<int>();
             float mass = (kv2.second)["mass"].get<float>();
-
+            //printf("6d\n"); fflush(stdout);
             bot->blobMap[blobId] = new Blob(posx, posy, mass);
-
+            //printf("6e\n"); fflush(stdout);
         }
         G_BotMap[botId] = bot;
     }
 
-    printf("7\n"); fflush(stdout);
+    //printf("7\n"); fflush(stdout);
 
     for (int i : j["deletedBots"]) {
         Bot* bot = G_BotMap[i];
@@ -230,7 +237,10 @@ void handle_message(const std::string & message)
             G_BotMap.erase(i);
         }
     }
-    printf("8\n"); fflush(stdout);
+
+    G_m.unlock();
+
+    //printf("8\n"); fflush(stdout);
     map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
     for (auto&& kv : botInfos) {
         int key = stoi(kv.first);
@@ -238,7 +248,7 @@ void handle_message(const std::string & message)
         string name = (kv.second)["name"].get<string>();
         G_BotInfoMap[key] = new BotInfo(c, name);
     }
-    printf("9\n"); fflush(stdout);
+    //printf("9\n"); fflush(stdout);
     for (int i : j["deletedBotInfos"]) {
         BotInfo* bi = G_BotInfoMap[i];
         if (bi) {
@@ -247,12 +257,12 @@ void handle_message(const std::string & message)
             G_BotInfoMap.erase(i);
         }
     }
-    printf("10\n"); fflush(stdout);
+    //printf("10\n"); fflush(stdout);
 }
 
 void handleWSData(void * aArg) {
 
-    if (1) {
+    if (0) {
         WsClient client("localhost:1234");
         client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
 
@@ -289,10 +299,10 @@ void handleWSData(void * aArg) {
         while (ws->getReadyState() != WebSocket::CLOSED) {
             ws->poll();
             ws->dispatch(handle_message);
-            G_wsCounter++;
+            /*G_wsCounter++;
             if (G_wsCounter % 100 == 0) {
                 //printf("G_wsCounter == %i\n", G_wsCounter);
-            }
+            }*/
         }
         delete ws;
     }
@@ -346,8 +356,12 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
 
         GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
+        GLfloat light[] = {13,7,19};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "light"), 1, light);
 
+
+        //printf("draw start\n"); fflush(stdout);
         GLfloat scale = 1.0;
         // To put the field from -500/500 and not 0/1000.
         GLfloat displacement = -500.0;
@@ -356,16 +370,20 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);
         for(auto toxinIt = G_ToxinMap.begin(); toxinIt != G_ToxinMap.end(); toxinIt++) {
             Toxin* toxin = toxinIt->second;
+            if (toxin) {
 
-            GLfloat translation[] = {GLfloat(displacement + toxin->posx * scale), 0, GLfloat(displacement + toxin->posy * scale)};
-            glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
-            GLfloat mass[] = {toxin->mass};
-            glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
+                GLfloat translation[] = {GLfloat(displacement + toxin->posx * scale), 0, GLfloat(displacement + toxin->posy * scale)};
+                glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+                GLfloat mass[] = {toxin->mass};
+                glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
 
-            glBindVertexArray(G_Sphere.vertexArrayObject);
-            glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
-            glBindVertexArray(0);
+                glBindVertexArray(G_Sphere.vertexArrayObject);
+                glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+                glBindVertexArray(0);
+            }
         }
+
+        //printf("drew toxin\n"); fflush(stdout);
 
         // Food
         GLfloat colorFood[] = {0, 1, 0};
@@ -382,28 +400,49 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
             glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
             glBindVertexArray(0);
         }
-
+        //printf("drew food: "); fflush(stdout);
+        //G_m.lock();
         // Blobs
         for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
             Bot* bot = botIt->second;
+            if (!bot) {
+                continue;
+            }
+            //printf("1"); fflush(stdout);
             BotInfo* botInfo = G_BotInfoMap[botIt->first];
-            GLfloat colorBot[] = {GLfloat(botInfo->color->r/255.0), GLfloat(botInfo->color->g/255.0), GLfloat(botInfo->color->b/255.0)};
+            //printf("2"); fflush(stdout);
+            GLfloat r2 = 1,g2 = 1,b2 = 1;
+            if (botInfo) {
+                r2 = GLfloat(botInfo->color->r/255.0);
+                g2 = GLfloat(botInfo->color->g/255.0);
+                b2 = GLfloat(botInfo->color->b/255.0);
+            }
+            //printf("3"); fflush(stdout);
+            GLfloat colorBot[] = {r2, g2, b2};
             glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorBot);
-            for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
-                Blob* blob = blobIt->second;
-
+            //printf("4"); fflush(stdout);
+            //for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
+            map<int, Blob*> blobMap = bot->blobMap;
+            //printf("4a"); fflush(stdout);
+            for (auto const& blobIt : blobMap) {
+                //cout << "|" << blobIt.first << "|\n";
+                Blob* blob = blobIt.second;
+                //printf("5"); fflush(stdout);
                 GLfloat translation[] = {GLfloat(displacement + blob->posx * scale), 0, GLfloat(displacement + blob->posy * scale)};
                 glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
                 GLfloat mass[] = {blob->mass};
                 glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
+                //printf("6"); fflush(stdout);
 
                 glBindVertexArray(G_Sphere.vertexArrayObject);
                 glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
                 glBindVertexArray(0);
+                //printf("7"); fflush(stdout);
             }
 
         }
-
+        //printf("\ndraw finish\n"); fflush(stdout);
+        //G_m.unlock();
 
 
     glUseProgram(0);

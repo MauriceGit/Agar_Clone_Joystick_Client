@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <map>
 
+#include "client_ws.hpp"
+
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +19,8 @@ using easywsclient::WebSocket;
 using namespace tthread;
 using namespace std;
 using json = nlohmann::json;
+
+typedef SimpleWeb::SocketClient<SimpleWeb::WS> WsClient;
 
 /*
  * =====================================================================
@@ -234,17 +238,42 @@ void handle_message(const std::string & message)
 
 void handleWSData(void * aArg) {
 
-    WebSocket::pointer ws = WebSocket::from_url(G_WSAddress);
-    if (!ws) {
-        printf("The websocket could not be initialised. The websocket thread exits.\n");
-        return;
+    if (0) {
+        WsClient client("localhost:1234");
+        client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
+
+            //auto message_str=message->string();
+            handle_message(message->string());
+            //cout << "Client: Message received: \"" << message_str << "\"" << endl;
+        };
+
+        client.onopen=[&client]() {
+            cout << "Client: Opended " << endl;
+        };
+
+        client.onclose=[](int status, const string& reason) {
+            cout << "Client: Closed connection with status code " << status << endl;
+        };
+
+        client.onerror=[](const boost::system::error_code& ec) {
+            cout << "Client: Error: " << ec << ", error message: " << ec.message() << endl;
+        };
+
+        client.start();
+    } else {
+
+        WebSocket::pointer ws = WebSocket::from_url(G_WSAddress);
+        if (!ws) {
+            printf("The websocket could not be initialised. The websocket thread exits.\n");
+            return;
+        }
+        assert(ws);
+        while (ws->getReadyState() != WebSocket::CLOSED) {
+            ws->poll();
+            ws->dispatch(handle_message);
+        }
+        delete ws;
     }
-    assert(ws);
-    while (ws->getReadyState() != WebSocket::CLOSED) {
-        ws->poll();
-        ws->dispatch(handle_message);
-    }
-    delete ws;
 }
 
 /*

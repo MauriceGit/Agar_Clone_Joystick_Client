@@ -356,15 +356,35 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
 
         GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
-        GLfloat light[] = {13,7,19};
+        GLfloat light[] = {13,150,19};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "light"), 1, light);
 
+        glBindVertexArray(G_Sphere.vertexArrayObject);
+        glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+        glBindVertexArray(0);
 
         //printf("draw start\n"); fflush(stdout);
         GLfloat scale = 1.0;
         // To put the field from -500/500 and not 0/1000.
         GLfloat displacement = -500.0;
+
+
+        GLfloat translation[] = {GLfloat(light[0]), light[1], GLfloat(light[2])};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+        GLfloat massLight[] = {500};
+        glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, massLight);
+        GLfloat colorLight[] = {1, 1, 0};
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorLight);
+        GLint isLight = 1;
+        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
+        glBindVertexArray(G_Sphere.vertexArrayObject);
+        glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+        glBindVertexArray(0);
+
+        isLight = 0;
+        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
+
         // Toxin
         GLfloat colorToxin[] = {r, g, b};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);

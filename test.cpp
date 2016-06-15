@@ -113,7 +113,7 @@ class Bot {
 int G_wsCounter = 0;
 int G_global_data = 0;
 //char G_WSAddress[] = "ws://192.168.2.187:1234";
-char G_WSAddress[] = "ws://127.0.0.1:1234";
+char G_WSAddress[] = "ws://127.0.0.1:8080/gui/";
 
 map <int, Food*>    G_FoodMap;
 map <int, Toxin*>   G_ToxinMap;
@@ -154,6 +154,19 @@ Geometry G_Cube;
  * =====================================================================
  */
 
+void deleteBot(int botId) {
+    Bot* bot = G_BotMap[botId];
+    if (bot) {
+        map<int, Blob*> blobs = bot->blobMap;
+        for (auto b : blobs) {
+            delete b.second;
+            //blobs.erase(b.first);
+        }
+        delete bot;
+        //G_BotMap.erase(botId);
+    }
+}
+
 void handle_message(const std::string & message)
 {
 
@@ -173,7 +186,15 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
-        G_FoodMap[key] = new Food(posx, posy, mass);
+        Food* food = G_FoodMap[key];
+        if (!food) {
+            food = new Food(posx, posy, mass);
+        } else {
+            food->posx = posx;
+            food->posy = posy;
+            food->mass = mass;
+        }
+        G_FoodMap[key] = food;
     }
     //printf("3\n"); fflush(stdout);
 
@@ -190,7 +211,16 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
-        G_ToxinMap[key] = new Toxin(posx, posy, mass);
+        Toxin* toxin = G_ToxinMap[key];
+        if (!toxin) {
+            toxin = new Toxin(posx, posy, mass);
+        } else {
+            toxin->posx = posx;
+            toxin->posy = posy;
+            toxin->mass = mass;
+        }
+
+        G_ToxinMap[key] = toxin;
     }
     //printf("5\n"); fflush(stdout);
 
@@ -200,13 +230,15 @@ void handle_message(const std::string & message)
     }
     //printf("6\n"); fflush(stdout);
 
-    G_m.lock();
-
     map<string, json> bots = j["createdOrUpdatedBots"];
     //printf("6a\n"); fflush(stdout);
     for (auto&& kv : bots) {
         int botId = stoi(kv.first);
         Bot* bot = new Bot();
+
+        // Probably make this more memory-friendly?
+        //deleteBot(botId);
+
         std::map<string, json> blobs = (kv.second)["blobs"]; // Possible seg-fault here (Why??)
         //printf("6b\n"); fflush(stdout);
         for (auto&& kv2 : blobs) {
@@ -238,15 +270,26 @@ void handle_message(const std::string & message)
         }
     }
 
-    G_m.unlock();
-
     //printf("8\n"); fflush(stdout);
     map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
     for (auto&& kv : botInfos) {
         int key = stoi(kv.first);
-        Color* c = new Color((kv.second)["color"]["R"].get<int>(), (kv.second)["color"]["G"].get<int>(), (kv.second)["color"]["B"].get<int>());
+        int r = (kv.second)["color"]["R"].get<int>();
+        int g = (kv.second)["color"]["G"].get<int>();
+        int b = (kv.second)["color"]["B"].get<int>();
         string name = (kv.second)["name"].get<string>();
-        G_BotInfoMap[key] = new BotInfo(c, name);
+
+        BotInfo* botInfo = G_BotInfoMap[key];
+        if (!botInfo) {
+            botInfo = new BotInfo(new Color(r, g, b), name);
+        } else {
+            botInfo->color->r = r;
+            botInfo->color->g = g;
+            botInfo->color->b = b;
+            botInfo->name = name;
+        }
+
+        G_BotInfoMap[key] = botInfo;
     }
     //printf("9\n"); fflush(stdout);
     for (int i : j["deletedBotInfos"]) {
@@ -385,6 +428,8 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         isLight = 0;
         glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
 
+        //printf("start drawing\n"); fflush(stdout);
+
         // Toxin
         GLfloat colorToxin[] = {r, g, b};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);
@@ -403,63 +448,71 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
             }
         }
 
-        //printf("drew toxin\n"); fflush(stdout);
+        //printf("t\n"); fflush(stdout);
 
         // Food
         GLfloat colorFood[] = {0, 1, 0};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorFood);
         for(auto foodIt = G_FoodMap.begin(); foodIt != G_FoodMap.end(); foodIt++) {
             Food* food = foodIt->second;
+            if (food) {
 
-            GLfloat translation[] = {GLfloat(displacement + food->posx * scale), 0, GLfloat(displacement + food->posy * scale)};
-            glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
-            GLfloat mass[] = {food->mass};
-            glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
-
-            glBindVertexArray(G_Sphere.vertexArrayObject);
-            glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
-            glBindVertexArray(0);
-        }
-        //printf("drew food: "); fflush(stdout);
-        //G_m.lock();
-        // Blobs
-        for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
-            Bot* bot = botIt->second;
-            if (!bot) {
-                continue;
-            }
-            //printf("1"); fflush(stdout);
-            BotInfo* botInfo = G_BotInfoMap[botIt->first];
-            //printf("2"); fflush(stdout);
-            GLfloat r2 = 1,g2 = 1,b2 = 1;
-            if (botInfo) {
-                r2 = GLfloat(botInfo->color->r/255.0);
-                g2 = GLfloat(botInfo->color->g/255.0);
-                b2 = GLfloat(botInfo->color->b/255.0);
-            }
-            //printf("3"); fflush(stdout);
-            GLfloat colorBot[] = {r2, g2, b2};
-            glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorBot);
-            //printf("4"); fflush(stdout);
-            //for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
-            map<int, Blob*> blobMap = bot->blobMap;
-            //printf("4a"); fflush(stdout);
-            for (auto const& blobIt : blobMap) {
-                //cout << "|" << blobIt.first << "|\n";
-                Blob* blob = blobIt.second;
-                //printf("5"); fflush(stdout);
-                GLfloat translation[] = {GLfloat(displacement + blob->posx * scale), 0, GLfloat(displacement + blob->posy * scale)};
+                GLfloat translation[] = {GLfloat(displacement + food->posx * scale), 0, GLfloat(displacement + food->posy * scale)};
                 glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
-                GLfloat mass[] = {blob->mass};
+                GLfloat mass[] = {food->mass};
                 glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
-                //printf("6"); fflush(stdout);
 
                 glBindVertexArray(G_Sphere.vertexArrayObject);
                 glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
                 glBindVertexArray(0);
-                //printf("7"); fflush(stdout);
             }
+        }
+        //printf("f\n"); fflush(stdout);
+        //printf("drew food: "); fflush(stdout);
+        //G_m.lock();
+        // Blobs
+        for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
+            //printf("1\n"); fflush(stdout);
+            Bot* bot = botIt->second;
+            //printf("1a\n"); fflush(stdout);
+            if (bot) {
 
+                //printf("1b"); fflush(stdout);
+                BotInfo* botInfo = G_BotInfoMap[botIt->first];
+                if (botInfo) {
+                    //printf("2\n"); fflush(stdout);
+
+                    GLfloat r2 = GLfloat(botInfo->color->r/255.0);
+                    GLfloat g2 = GLfloat(botInfo->color->g/255.0);
+                    GLfloat b2 = GLfloat(botInfo->color->b/255.0);
+
+                    //printf("3\n"); fflush(stdout);
+                    GLfloat colorBot[] = {r2, g2, b2};
+                    glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorBot);
+                    //printf("4"); fflush(stdout);
+                    //for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
+                    map<int, Blob*> blobMap = bot->blobMap;
+                    //printf("4a\n"); fflush(stdout);
+                    for (auto const& blobIt : blobMap) {
+                        //cout << "|" << blobIt.first << "|\n";
+                        Blob* blob = blobIt.second;
+                        if (blob) {
+                            //printf("5"); fflush(stdout);
+                            GLfloat translation[] = {GLfloat(displacement + blob->posx * scale), 0, GLfloat(displacement + blob->posy * scale)};
+                            glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
+                            GLfloat mass[] = {blob->mass};
+                            glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
+                            //printf("6"); fflush(stdout);
+
+                            glBindVertexArray(G_Sphere.vertexArrayObject);
+                            glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
+                            glBindVertexArray(0);
+                            //printf("7"); fflush(stdout);
+                        }
+                    }
+                    //printf("4b\n"); fflush(stdout);
+                }
+            }
         }
         //printf("\ndraw finish\n"); fflush(stdout);
         //G_m.unlock();

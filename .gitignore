@@ -1,8 +1,5 @@
-TinyThread++-1.1/
-easywsclient.o
-easywsclient/
-json/
-test
-test.o
-tinythread.o
+tinythread/*.o
+json/*.o
+ws_client/*.o
+easywsclient/*.o
 

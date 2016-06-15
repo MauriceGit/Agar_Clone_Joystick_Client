@@ -1,14 +1,14 @@
 
 #include <iostream>
-#include "json.hpp"
-#include "tinythread.h"
-#include "fast_mutex.h"
+#include "json/json.hpp"
+#include "tinythread/tinythread.h"
+#include "tinythread/fast_mutex.h"
 //#include <mutex.h>
-#include "easywsclient.hpp"
-#include <unordered_map>
+#include "easywsclient/easywsclient.hpp"
+//#include <unordered_map>
 #include <map>
 
-#include "client_ws.hpp"
+#include "client_ws/client_ws.hpp"
 
 #define GLEW_STATIC
 #include <GL/glew.h>

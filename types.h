@@ -34,9 +34,6 @@ enum e_MouseInterpretType
 /** Datentyp fuer Mausereignisse. */
 typedef enum e_MouseInterpretType MouseInterpretType;
 
-/** Vektor im 3D-Raum */
-typedef GLfloat CGVector3D[3];
-
 typedef int Movement[3];
 
 

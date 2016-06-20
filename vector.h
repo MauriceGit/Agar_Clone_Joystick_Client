@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "types.h"
 
 /* eig. Funktionen */
 

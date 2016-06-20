@@ -14,6 +14,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "logic.h"
+#include "joystickCamera.h"
 #include "sphere.h"
 
 using easywsclient::WebSocket;
@@ -306,7 +307,7 @@ void handle_message(const std::string & message)
 void handleWSData(void * aArg) {
 
     if (0) {
-        WsClient client("localhost:1234");
+        WsClient client("localhost:8080");
         client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
 
             //auto message_str=message->string();
@@ -537,9 +538,15 @@ void cbDisplay (GLFWwindow * window)
     setProjection ((double)G_Width/G_Height);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt (getCameraPosition(0), getCameraPosition(1), getCameraPosition(2),
-         0.0, 0.0, 0.0,
-         0.0, 1.0, 0.0);
+    if (0) {
+        gluLookAt (getCameraPosition(0), getCameraPosition(1), getCameraPosition(2),
+             0.0, 0.0, 0.0,
+             0.0, 1.0, 0.0);
+    } else {
+        gluLookAt (getJoyCameraPosition(0), getJoyCameraPosition(1), getJoyCameraPosition(2),
+             getJoyCenter(0), getJoyCenter(1), getJoyCenter(2),
+             getJoyUp(0), getJoyUp(1), getJoyUp(2));
+    }
 
     //drawColoredQuad(1,0,0);
     drawColoredSphere(1,0,0);
@@ -713,6 +720,7 @@ void mainLoop (GLFWwindow * window)
 
     while (!glfwWindowShouldClose(window))
     {
+        calcJoyCameraMovement();
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
         glfwPollEvents();
@@ -824,6 +832,8 @@ int initAndStartIO (char* title, int width, int height)
 
     if (createWindow())
     {
+        initJoyCamera();
+
         GLenum err = glewInit();
         if (err != GLEW_OK)
         {

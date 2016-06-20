@@ -12,8 +12,6 @@
 
 #define NORM_PITCH 1.188
 
-short G_A = 0, G_B = 0;
-
 /**
  * Rechnet ein Einheits-Quaternion in eine Rotationsmatrix um.
  * @param q das Quaternion
@@ -87,14 +85,29 @@ static void matrixToYPR( float m[3][3], float ypr[3] )
    ypr[2] = -atan2( m[1][2], m[2][2] );
 }
 
-float posToAngle(short pos) {
-    return pos / 5000000.0;
+float posToAngle(short pos, double factor) {
+
+    if (pos < 1000 && pos > -1000) {
+        pos = 0;
+    }
+
+
+    float value = log(abs(pos) <= 1 && abs(pos) >= 0 ? 1 : abs(pos)*factor) / 2000.0;
+    if (pos <= 0) {
+        value *= -1;
+    }
+
+    //printf ("value1: %.10f\n", value);
+    //printf ("value2: %.10f\n", (pos / 5000.0) * factor);
+    return value;
+
+    //return (pos / 5000.0) * factor;
 }
 
 /**
  * Liefert das Quaternion vom HMD normalisiert zurück.
  */
-Quaternion getQuaternion() {
+Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double factor) {
     short a,b;
     Quaternion q, qA, qB, qRes;
 
@@ -107,14 +120,9 @@ Quaternion getQuaternion() {
           return q;
     }
 
-    Vec3D vB = {.x=1, .y=0, .z=0};
-    qB = createQuaternion(vB, posToAngle(b));
+    qB = createQuaternion(jawAxis, posToAngle(b, factor));
 
-    Vec3D vA = {.x=0, .y=1, .z=0};
-    qA = createQuaternion(vA, posToAngle(a));
-
-    G_A = a;
-    G_B = b;
+    qA = createQuaternion(turnAxis, posToAngle(a, factor));
 
     addQuaternionQuaternion(&qA, &qB, &qRes);
 
@@ -123,7 +131,7 @@ Quaternion getQuaternion() {
 }
 
 short getTranslationAxisValue(int axis) {
-    if (axis == 3 || axis == 4) {
+    if (axis <= 5) {
         short v;
         if (!getAxisValue(axis, &v)) {
             printf("ERROR reading a translation axis value!\n");
@@ -156,10 +164,10 @@ int initializeHMD() {
  * Liefert die Roll- Pitch- und Yaw-Winkel
  * @param ypr YawPitchRoll
  */
-int getYPR(float ypr[3]) {
+int getYPR(Vec3D jawAxis, Vec3D turnAxis, float ypr[3]) {
     float R[3][3];
 
-    Quaternion q = getQuaternion();
+    Quaternion q = getQuaternion(jawAxis, turnAxis, 1.0);
 
     quaternionToMatrix(q, R);
     matrixToYPR(R, ypr);

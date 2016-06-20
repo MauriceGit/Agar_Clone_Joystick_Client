@@ -14,7 +14,7 @@
 /**
  * Liefert das Quaternion vom HMD normalisiert zurück.
  */
-Quaternion getQuaternion();
+Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double factor);
 
 /**
  * Gibt den absoluten Wert, den der Joystick liefert.

@@ -720,7 +720,7 @@ void mainLoop (GLFWwindow * window)
 
     while (!glfwWindowShouldClose(window))
     {
-        calcJoyCameraMovement();
+        calcJoyCameraMovement(lastCallTime);
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
         glfwPollEvents();

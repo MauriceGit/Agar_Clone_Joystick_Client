@@ -63,40 +63,41 @@ double getJoyCenter(int axis) {
  * Berechnet alle Funktionen, die vom interval abhängig sind
  * @param interval - Zeit
  */
-void calcJoyCameraMovement ()
+void calcJoyCameraMovement (double interval)
 {
 
     handleHMDEvent();
 
-    Quaternion q = getQuaternion();
+    Vec3D sideDirection = normVector3D(crossProduct3D(G_JoyViewVector, G_JoyUpVector));
+
+    //Quaternion q = getQuaternion(sideDirection, G_JoyUpVector);
+    Quaternion q = getQuaternion(sideDirection, {.x=0, .y=1, .z=0}, interval);
+    //Quaternion q = getQuaternion(sideDirection, G_JoyViewVector);
 
     rotatePointWithQuaternion(q, &G_JoyViewVector);
     rotatePointWithQuaternion(q, &G_JoyUpVector);
 
     double forwardTranslation = -getTranslationAxisValue(4) / 500000.0;
-    G_JoyViewVector = normVector3D(G_JoyViewVector);
+    Vec3D forwardVec = normVector3D({.x=G_JoyViewVector.x, .y=0, .z=G_JoyViewVector.z});
+    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(forwardVec, forwardTranslation));
 
-    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(G_JoyViewVector, forwardTranslation));
-
-    //G_JoyCameraTranslation[0] += G_JoyViewVector[0] * forwardTranslation;
-    //G_JoyCameraTranslation[1] += G_JoyViewVector[1] * forwardTranslation;
-    //G_JoyCameraTranslation[2] += G_JoyViewVector[2] * forwardTranslation;
-
-    Vec3D sideDirection = crossProduct3D(G_JoyViewVector, G_JoyUpVector);
-    sideDirection = normVector3D(sideDirection);
     double sideTranslation = getTranslationAxisValue(3) / 500000.0;
+    Vec3D sideVec = normVector3D({.x=sideDirection.x, .y=0, .z=sideDirection.z});
+    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(sideVec, sideTranslation));
 
-    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(sideDirection, sideTranslation));
-    //G_JoyCameraTranslation[0] += sideDirection[0] * sideTranslation;
-    //G_JoyCameraTranslation[1] += sideDirection[1] * sideTranslation;
-    //G_JoyCameraTranslation[2] += sideDirection[2] * sideTranslation;
+    Vec3D upDirection = {.x=0, .y=1, .z=0};
+    double upTranslation = (getTranslationAxisValue(2) + 32768) / 500000.0;
+    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(upDirection, upTranslation));
 
-    Vec3D basePos = {.x=CAMERA_X, .y=CAMERA_Y, .z=CAMERA_Z};
-    G_JoyCameraPosition = addVectorVector(basePos, G_JoyCameraTranslation);
-    //G_JoyCameraPosition[0] = CAMERA_X + G_JoyCameraTranslation[0];
-    //G_JoyCameraPosition[1] = CAMERA_Y + G_JoyCameraTranslation[1];
-    //G_JoyCameraPosition[2] = CAMERA_Z + G_JoyCameraTranslation[2];
+    Vec3D downDirection = {.x=0, .y=-1, .z=0};
+    double downTranslation = (getTranslationAxisValue(5) + 32768) / 500000.0;
+    G_JoyCameraTranslation = addVectorVector(G_JoyCameraTranslation, multiplyVectorScalar(downDirection, downTranslation));
 
+    //Vec3D basePos = {.x=CAMERA_X, .y=CAMERA_Y, .z=CAMERA_Z};
+    G_JoyCameraPosition = G_JoyCameraTranslation;
+
+    G_JoyUpVector = normVector3D(G_JoyUpVector);
+    G_JoyViewVector = normVector3D(G_JoyViewVector);
 
 }
 
@@ -119,4 +120,5 @@ void initJoyCamera ()
         printf("ERROR: hmd could not be initialized.\n");
     }
 }
+
 

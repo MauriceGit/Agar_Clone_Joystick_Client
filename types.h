@@ -17,7 +17,7 @@
 /* ---- Eigene Konstanten */
 
 #define CAMERA_X        -30.0
-#define CAMERA_Y        600.0
+#define CAMERA_Y        0.0
 #define CAMERA_Z        70.0
 #define CAMERA_SPEED    15.0
 

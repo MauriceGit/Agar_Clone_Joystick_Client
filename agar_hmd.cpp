@@ -114,7 +114,8 @@ class Bot {
 int G_wsCounter = 0;
 int G_global_data = 0;
 //char G_WSAddress[] = "ws://192.168.2.187:1234";
-char G_WSAddress[] = "ws://127.0.0.1:8080/gui/";
+//char G_WSAddress[] = "ws://127.0.0.1:8080/gui/";
+char G_WSAddress[] = "ws://cagine.fh-wedel.de:8080/gui/";
 
 map <int, Food*>    G_FoodMap;
 map <int, Toxin*>   G_ToxinMap;

@@ -97,11 +97,8 @@ float posToAngle(short pos, double factor) {
         value *= -1;
     }
 
-    //printf ("value1: %.10f\n", value);
-    //printf ("value2: %.10f\n", (pos / 5000.0) * factor);
     return value;
 
-    //return (pos / 5000.0) * factor;
 }
 
 /**
@@ -193,21 +190,3 @@ int closeHMD() {
 void handleHMDEvent() {
     handleJoystickEvents();
 }
-
-/*
- * MODUL-TEST
-int main(void) {
-
-    float ypr[3];
-    initializeHMD();
-
-    while (1) {
-        if (!getYPR(ypr)) {
-            printf("idiot!\n");
-            exit(1);
-        }
-        printf("yaw: %f, pitch: %f, roll: %f\n", ypr[0], ypr[1], ypr[2]);
-    }
-}
-*/
-

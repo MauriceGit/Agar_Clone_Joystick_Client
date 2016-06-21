@@ -130,6 +130,7 @@ mutex G_m;
  * =====================================================================
  */
 
+int G_joystickInput = 1;
 int G_openGLCounter = 0;
 double G_Interval;
 int G_Width;
@@ -175,10 +176,8 @@ void handle_message(const std::string & message)
     if (!message.compare("alive_test")) {
         return;
     }
-    //printf("1\n"); fflush(stdout);
 
     json j = json::parse(message);
-    //printf("2\n"); fflush(stdout);
 
     map<string, json> foods = j["createdOrUpdatedFoods"];
     for (auto&& kv : foods) {
@@ -198,13 +197,11 @@ void handle_message(const std::string & message)
         }
         G_FoodMap[key] = food;
     }
-    //printf("3\n"); fflush(stdout);
 
     for (int i : j["deletedFoods"]) {
         delete G_FoodMap[i];
         G_FoodMap.erase(i);
     }
-    //printf("4\n"); fflush(stdout);
     map<string, json> toxins = j["createdOrUpdatedToxins"];
     for (auto&& kv : toxins) {
         int key = stoi(kv.first);
@@ -224,40 +221,28 @@ void handle_message(const std::string & message)
 
         G_ToxinMap[key] = toxin;
     }
-    //printf("5\n"); fflush(stdout);
 
     for (int i : j["deletedToxins"]) {
         delete G_ToxinMap[i];
         G_ToxinMap.erase(i);
     }
-    //printf("6\n"); fflush(stdout);
 
     map<string, json> bots = j["createdOrUpdatedBots"];
-    //printf("6a\n"); fflush(stdout);
     for (auto&& kv : bots) {
         int botId = stoi(kv.first);
         Bot* bot = new Bot();
 
         // Probably make this more memory-friendly?
-        //deleteBot(botId);
-
-        std::map<string, json> blobs = (kv.second)["blobs"]; // Possible seg-fault here (Why??)
-        //printf("6b\n"); fflush(stdout);
+        std::map<string, json> blobs = (kv.second)["blobs"];
         for (auto&& kv2 : blobs) {
             int blobId = stoi(kv2.first);
-            //printf("6c\n"); fflush(stdout);
-            //cout << kv2.second << "\n";
             int posx =   (kv2.second)["pos"]["X"].get<int>();
             int posy =   (kv2.second)["pos"]["Y"].get<int>();
             float mass = (kv2.second)["mass"].get<float>();
-            //printf("6d\n"); fflush(stdout);
             bot->blobMap[blobId] = new Blob(posx, posy, mass);
-            //printf("6e\n"); fflush(stdout);
         }
         G_BotMap[botId] = bot;
     }
-
-    //printf("7\n"); fflush(stdout);
 
     for (int i : j["deletedBots"]) {
         Bot* bot = G_BotMap[i];
@@ -272,7 +257,6 @@ void handle_message(const std::string & message)
         }
     }
 
-    //printf("8\n"); fflush(stdout);
     map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
     for (auto&& kv : botInfos) {
         int key = stoi(kv.first);
@@ -293,7 +277,6 @@ void handle_message(const std::string & message)
 
         G_BotInfoMap[key] = botInfo;
     }
-    //printf("9\n"); fflush(stdout);
     for (int i : j["deletedBotInfos"]) {
         BotInfo* bi = G_BotInfoMap[i];
         if (bi) {
@@ -302,7 +285,6 @@ void handle_message(const std::string & message)
             G_BotInfoMap.erase(i);
         }
     }
-    //printf("10\n"); fflush(stdout);
 }
 
 void handleWSData(void * aArg) {
@@ -311,13 +293,11 @@ void handleWSData(void * aArg) {
         WsClient client("localhost:8080");
         client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
 
-            //auto message_str=message->string();
             handle_message(message->string());
             G_wsCounter++;
             if (G_wsCounter % 100 == 0) {
                 //printf("G_wsCounter == %i\n", G_wsCounter);
             }
-            //cout << "Client: Message received: \"" << message_str << "\"" << endl;
         };
 
         client.onopen=[&client]() {
@@ -409,7 +389,6 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
         glBindVertexArray(0);
 
-        //printf("draw start\n"); fflush(stdout);
         GLfloat scale = 1.0;
         // To put the field from -500/500 and not 0/1000.
         GLfloat displacement = -500.0;
@@ -430,8 +409,6 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         isLight = 0;
         glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
 
-        //printf("start drawing\n"); fflush(stdout);
-
         // Toxin
         GLfloat colorToxin[] = {r, g, b};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);
@@ -450,8 +427,6 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
             }
         }
 
-        //printf("t\n"); fflush(stdout);
-
         // Food
         GLfloat colorFood[] = {0, 1, 0};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorFood);
@@ -469,56 +444,38 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
                 glBindVertexArray(0);
             }
         }
-        //printf("f\n"); fflush(stdout);
-        //printf("drew food: "); fflush(stdout);
-        //G_m.lock();
+
         // Blobs
         for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
-            //printf("1\n"); fflush(stdout);
             Bot* bot = botIt->second;
-            //printf("1a\n"); fflush(stdout);
             if (bot) {
 
-                //printf("1b"); fflush(stdout);
                 BotInfo* botInfo = G_BotInfoMap[botIt->first];
                 if (botInfo) {
-                    //printf("2\n"); fflush(stdout);
 
                     GLfloat r2 = GLfloat(botInfo->color->r/255.0);
                     GLfloat g2 = GLfloat(botInfo->color->g/255.0);
                     GLfloat b2 = GLfloat(botInfo->color->b/255.0);
 
-                    //printf("3\n"); fflush(stdout);
                     GLfloat colorBot[] = {r2, g2, b2};
                     glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorBot);
-                    //printf("4"); fflush(stdout);
-                    //for (auto blobIt = bot->blobMap.begin(); blobIt != bot->blobMap.end(); blobIt++) {
                     map<int, Blob*> blobMap = bot->blobMap;
-                    //printf("4a\n"); fflush(stdout);
                     for (auto const& blobIt : blobMap) {
-                        //cout << "|" << blobIt.first << "|\n";
                         Blob* blob = blobIt.second;
                         if (blob) {
-                            //printf("5"); fflush(stdout);
                             GLfloat translation[] = {GLfloat(displacement + blob->posx * scale), 0, GLfloat(displacement + blob->posy * scale)};
                             glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
                             GLfloat mass[] = {blob->mass};
                             glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, mass);
-                            //printf("6"); fflush(stdout);
 
                             glBindVertexArray(G_Sphere.vertexArrayObject);
                             glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
                             glBindVertexArray(0);
-                            //printf("7"); fflush(stdout);
                         }
                     }
-                    //printf("4b\n"); fflush(stdout);
                 }
             }
         }
-        //printf("\ndraw finish\n"); fflush(stdout);
-        //G_m.unlock();
-
 
     glUseProgram(0);
     glEnable(GL_CULL_FACE);
@@ -539,7 +496,7 @@ void cbDisplay (GLFWwindow * window)
     setProjection ((double)G_Width/G_Height);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    if (0) {
+    if (!G_joystickInput) {
         gluLookAt (getCameraPosition(0), getCameraPosition(1), getCameraPosition(2),
              0.0, 0.0, 0.0,
              0.0, 1.0, 0.0);
@@ -577,6 +534,11 @@ void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods
     if (action == GLFW_PRESS) {
         switch (key)
         {
+            case 'i':
+            case 'I':
+                printf("joystick: %i\n", G_joystickInput);
+                G_joystickInput = !G_joystickInput;
+                break;
             case 'q':
             case 'Q':
             case GLFW_KEY_ESCAPE:
@@ -606,7 +568,7 @@ void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods
 
                 break;
             case GLFW_KEY_UP:
-                logic:setKey (1,0);
+                setKey (1,0);
                 break;
             case GLFW_KEY_DOWN:
                 setKey (0,0);

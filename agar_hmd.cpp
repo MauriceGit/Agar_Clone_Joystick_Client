@@ -130,8 +130,9 @@ mutex G_m;
  * =====================================================================
  */
 
-int G_joystickInput = 1;
-int G_openGLCounter = 0;
+int G_JoystickInput = 1;
+int G_JoystickWorking;
+int G_OpenGLCounter = 0;
 double G_Interval;
 int G_Width;
 int G_Height;
@@ -496,7 +497,7 @@ void cbDisplay (GLFWwindow * window)
     setProjection ((double)G_Width/G_Height);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    if (!G_joystickInput) {
+    if (!G_JoystickInput) {
         gluLookAt (getCameraPosition(0), getCameraPosition(1), getCameraPosition(2),
              0.0, 0.0, 0.0,
              0.0, 1.0, 0.0);
@@ -536,8 +537,13 @@ void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods
         {
             case 'i':
             case 'I':
-                printf("joystick: %i\n", G_joystickInput);
-                G_joystickInput = !G_joystickInput;
+                printf("joystick: %i\n", G_JoystickInput);
+                G_JoystickInput = !G_JoystickInput;
+
+                if (!G_JoystickWorking) {
+                    G_JoystickInput = 0;
+                }
+
                 break;
             case 'q':
             case 'Q':
@@ -683,13 +689,15 @@ void mainLoop (GLFWwindow * window)
 
     while (!glfwWindowShouldClose(window))
     {
-        calcJoyCameraMovement(lastCallTime);
+        if (G_JoystickWorking) {
+            calcJoyCameraMovement(lastCallTime);
+        }
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
         glfwPollEvents();
-        G_openGLCounter++;
-        if (G_openGLCounter % 100 == 0) {
-            //printf("Average Draw call per Websocket message: %.2f\n", G_openGLCounter / (float)G_wsCounter);
+        G_OpenGLCounter++;
+        if (G_OpenGLCounter % 100 == 0) {
+            //printf("Average Draw call per Websocket message: %.2f\n", G_OpenGLCounter / (float)G_wsCounter);
         }
     }
 
@@ -795,7 +803,8 @@ int initAndStartIO (char* title, int width, int height)
 
     if (createWindow())
     {
-        initJoyCamera();
+        G_JoystickWorking = initJoyCamera();
+        G_JoystickInput = G_JoystickWorking;
 
         GLenum err = glewInit();
         if (err != GLEW_OK)
@@ -865,10 +874,10 @@ void handleGraphics(void * aArg) {
 int main()
 {
     thread handleWS   (handleWSData, 0);
-    thread handleRest (handleGraphics, 0);
+    thread handleGraphic (handleGraphics, 0);
 
     handleWS.join();
-    handleRest.join();
+    handleGraphic.join();
 
     return 0;
 }

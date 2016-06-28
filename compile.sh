@@ -32,3 +32,5 @@ echo "--> linking everything .."
 g++-4.9 -L/usr/lib/x86_64-linux-gnu/ -o "$programName" quaternions.o joystick.o hmd.o joystickCamera.o sphere.o vector.o logic.o agar_hmd.o "$threadPrefix"tinythread.o "$wsPrefix"easywsclient.o `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread -lboost_system -lssl -lcrypto
 
 rm -f *.o
+rm -f "$wsPrefix"*.o
+rm -f "$threadPrefix"*.o

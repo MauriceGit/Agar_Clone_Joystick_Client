@@ -119,7 +119,7 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double factor) {
 
     qB = createQuaternion(jawAxis, posToAngle(b, factor));
 
-    qA = createQuaternion(turnAxis, posToAngle(a, factor));
+    qA = createQuaternion(turnAxis, -posToAngle(a, factor));
 
     addQuaternionQuaternion(&qA, &qB, &qRes);
 

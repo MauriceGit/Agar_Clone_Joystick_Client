@@ -8,8 +8,6 @@
 //#include <unordered_map>
 #include <map>
 
-#include "client_ws/client_ws.hpp"
-
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -22,7 +20,6 @@ using namespace tthread;
 using namespace std;
 using json = nlohmann::json;
 
-typedef SimpleWeb::SocketClient<SimpleWeb::WS> WsClient;
 
 /*
  * =====================================================================
@@ -111,10 +108,6 @@ class Bot {
         }
 };
 
-int G_wsCounter = 0;
-int G_global_data = 0;
-//char G_WSAddress[] = "ws://192.168.2.187:1234";
-//char G_WSAddress[] = "ws://127.0.0.1:8080/gui/";
 char G_WSAddress[] = "ws://cagine.fh-wedel.de:8080/gui/";
 
 map <int, Food*>    G_FoodMap;
@@ -132,7 +125,6 @@ mutex G_m;
 
 int G_JoystickInput = 1;
 int G_JoystickWorking;
-int G_OpenGLCounter = 0;
 double G_Interval;
 int G_Width;
 int G_Height;
@@ -503,7 +495,7 @@ void toggleWireframeMode (void)
 void printHelp() {
     printf("\n\n");
     printf("Call:\n");
-    printf("    ./agar_joystick.cpp [JS_SOURCE]\n");
+    printf("    ./agar_joystick [JS_SOURCE]\n");
     printf("Description:\n");
     printf("    This is a client for our programming challenge WS16. It is able to connect\n");
     printf("    to the websocket and imitates a browser interface. But renders the blobs\n");
@@ -685,10 +677,6 @@ void mainLoop (GLFWwindow * window)
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
         glfwPollEvents();
-        G_OpenGLCounter++;
-        if (G_OpenGLCounter % 100 == 0) {
-            //printf("Average Draw call per Websocket message: %.2f\n", G_OpenGLCounter / (float)G_wsCounter);
-        }
     }
 
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-programName="agar_hmd"
+programName="agar_joystick"
 wsPrefix="easywsclient/"
 threadPrefix="tinythread/"
 
@@ -28,8 +28,7 @@ echo "--> compile easywsclient .."
 g++-4.9 -std=c++11 -I./ -c -o "$wsPrefix"easywsclient.o "$wsPrefix"easywsclient.cpp -W -O3
 
 echo "--> linking everything .."
-# g++-4.9 -L/usr/X11R6/lib64 -o "$programName" quaternions.o joystick.o hmd.o joystickCamera.o sphere.o vector.o logic.o agar_hmd.o "$threadPrefix"tinythread.o "$wsPrefix"easywsclient.o `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread -lboost_system -lssl -lcrypto
-g++-4.9 -L/usr/lib/x86_64-linux-gnu/ -o "$programName" quaternions.o joystick.o hmd.o joystickCamera.o sphere.o vector.o logic.o agar_hmd.o "$threadPrefix"tinythread.o "$wsPrefix"easywsclient.o `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread -lboost_system -lssl -lcrypto
+g++-4.9 -L/usr/lib/x86_64-linux-gnu/ -o "$programName" quaternions.o joystick.o hmd.o joystickCamera.o sphere.o vector.o logic.o agar_hmd.o "$threadPrefix"tinythread.o "$wsPrefix"easywsclient.o `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthread -lssl -lcrypto
 
 rm -f *.o
 rm -f "$wsPrefix"*.o

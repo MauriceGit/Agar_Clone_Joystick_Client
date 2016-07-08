@@ -290,48 +290,18 @@ void handle_message(const std::string & message)
 
 void handleWSData(void * aArg) {
 
-    if (0) {
-        WsClient client("localhost:8080");
-        client.onmessage=[&client](shared_ptr<WsClient::Message> message) {
-
-            handle_message(message->string());
-            G_wsCounter++;
-            if (G_wsCounter % 100 == 0) {
-                //printf("G_wsCounter == %i\n", G_wsCounter);
-            }
-        };
-
-        client.onopen=[&client]() {
-            cout << "Client: Opended " << endl;
-        };
-
-        client.onclose=[](int status, const string& reason) {
-            cout << "Client: Closed connection with status code " << status << endl;
-        };
-
-        client.onerror=[](const boost::system::error_code& ec) {
-            cout << "Client: Error: " << ec << ", error message: " << ec.message() << endl;
-        };
-
-        client.start();
-    } else {
-
-        WebSocket::pointer ws = WebSocket::from_url(G_WSAddress);
-        if (!ws) {
-            printf("The websocket could not be initialised. The websocket thread exits.\n");
-            return;
-        }
-        assert(ws);
-        while (ws->getReadyState() != WebSocket::CLOSED) {
-            ws->poll();
-            ws->dispatch(handle_message);
-            /*G_wsCounter++;
-            if (G_wsCounter % 100 == 0) {
-                //printf("G_wsCounter == %i\n", G_wsCounter);
-            }*/
-        }
-        delete ws;
+    WebSocket::pointer ws = WebSocket::from_url(G_WSAddress);
+    if (!ws) {
+        printf("The websocket could not be initialised. The websocket thread exits.\n");
+        return;
     }
+    assert(ws);
+    while (ws->getReadyState() != WebSocket::CLOSED) {
+        ws->poll();
+        ws->dispatch(handle_message);
+    }
+    delete ws;
+
 }
 
 /*

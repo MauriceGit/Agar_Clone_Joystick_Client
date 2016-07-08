@@ -104,7 +104,7 @@ float posToAngle(short pos, double factor) {
 /**
  * Liefert das Quaternion vom HMD normalisiert zurück.
  */
-Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double factor) {
+Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, double maxJawAngle, double factor) {
     short a,b;
     Quaternion q, qA, qB, qRes;
 
@@ -117,7 +117,12 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double factor) {
           return q;
     }
 
-    qB = createQuaternion(jawAxis, posToAngle(b, factor));
+    double angle = posToAngle(b, factor);
+    angle = (angle > 0.0 && angle < minJawAngle) ? 0.0 : angle;
+    angle = (angle < 0.0 && angle > maxJawAngle) ? 0.0 : angle;
+
+
+    qB = createQuaternion(jawAxis, angle);
 
     qA = createQuaternion(turnAxis, -posToAngle(a, factor));
 
@@ -164,7 +169,7 @@ int initializeHMD() {
 int getYPR(Vec3D jawAxis, Vec3D turnAxis, float ypr[3]) {
     float R[3][3];
 
-    Quaternion q = getQuaternion(jawAxis, turnAxis, 1.0);
+    Quaternion q = getQuaternion(jawAxis, turnAxis, 180, 180, 1.0);
 
     quaternionToMatrix(q, R);
     matrixToYPR(R, ypr);

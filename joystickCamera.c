@@ -70,12 +70,18 @@ void calcJoyCameraMovement (double interval)
 
     Vec3D sideDirection = normVector3D(crossProduct3D(G_JoyViewVector, G_JoyUpVector));
 
+    double maxAngle = 179.0 - angleVectorVector(G_JoyViewVector, G_JoyUpVector); // bei 90° -- +70°
+    double minAngle = 1.0 - angleVectorVector(G_JoyViewVector, G_JoyUpVector); // bei 90° -- -70°
+
+    maxAngle = maxAngle < 0 ? -1.0 : maxAngle;
+    minAngle = minAngle > 0 ? 1.0 : minAngle;
+
     //Quaternion q = getQuaternion(sideDirection, G_JoyUpVector);
-    Quaternion q = getQuaternion(sideDirection, {.x=0, .y=1, .z=0}, interval);
+    Quaternion q = getQuaternion(sideDirection, {.x=0, .y=1, .z=0}, minAngle, maxAngle, interval);
     //Quaternion q = getQuaternion(sideDirection, G_JoyViewVector);
 
     rotatePointWithQuaternion(q, &G_JoyViewVector);
-    rotatePointWithQuaternion(q, &G_JoyUpVector);
+    //rotatePointWithQuaternion(q, &G_JoyUpVector);
 
     double forwardTranslation = -getTranslationAxisValue(4) / 500000.0;
     Vec3D forwardVec = normVector3D({.x=G_JoyViewVector.x, .y=0, .z=G_JoyViewVector.z});
@@ -96,7 +102,7 @@ void calcJoyCameraMovement (double interval)
     //Vec3D basePos = {.x=CAMERA_X, .y=CAMERA_Y, .z=CAMERA_Z};
     G_JoyCameraPosition = G_JoyCameraTranslation;
 
-    G_JoyUpVector = normVector3D(G_JoyUpVector);
+    //G_JoyUpVector = normVector3D(G_JoyUpVector);
     G_JoyViewVector = normVector3D(G_JoyViewVector);
 
 }

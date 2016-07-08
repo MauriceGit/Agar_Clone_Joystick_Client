@@ -500,11 +500,38 @@ void toggleWireframeMode (void)
         glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 }
 
+void printHelp() {
+    printf("\n\n");
+    printf("Call:\n");
+    printf("    ./agar_joystick.cpp [JS_SOURCE]\n");
+    printf("Description:\n");
+    printf("    This is a client for our programming challenge WS16. It is able to connect\n");
+    printf("    to the websocket and imitates a browser interface. But renders the blobs\n");
+    printf("    in 3D, allowing a better emerging.\n");
+    printf("    Additionally, the view can be managed, using a Joystick (i.e. XBox Gamepad).\n");
+    printf("Parameter:\n");
+    printf("    JS_SOURCE:\n");
+    printf("        A complete path to a the joystick usb stream.\n");
+    printf("        As standart, the joystick is bound to: /dev/input/js0.\n");
+    printf("        If this is not the case or the joystick, please provide the correct source.\n");
+    printf("Key assignments:\n");
+    printf("    'h' | 'H': Print this usage.\n");
+    printf("    'i' | 'I': Toggle between the Joystick and Mouse for camera control.\n");
+    printf("    'F1': Toggle wireframe-Mode.\n");
+    printf("    'q' | 'Q' | 'Esc': Exit the program.\n");
+    printf("                       You might have to additionally Ctrl+C the websocket connection.\n");
+    printf("\n\n");
+}
+
 void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (action == GLFW_PRESS) {
         switch (key)
         {
+            case 'h':
+            case 'H':
+                printHelp();
+                break;
             case 'i':
             case 'I':
                 printf("joystick: %i\n", G_JoystickInput);
@@ -519,13 +546,6 @@ void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods
             case 'Q':
             case GLFW_KEY_ESCAPE:
                 glfwSetWindowShouldClose(window, GL_TRUE);
-                break;
-            case 'f':
-            case 'F':
-                G_FullScreen = !G_FullScreen;
-                createWindow();
-                registerCallBacks (G_Window);
-                mainLoop (G_Window);
                 break;
             case GLFW_KEY_F1:
                 toggleWireframeMode();
@@ -845,6 +865,8 @@ void handleGraphics(void * aArg) {
 
 int main(int argc, char* argv[])
 {
+    printHelp();
+
     thread handleWS   (handleWSData, 0);
 
     char* name = "/dev/input/js0";

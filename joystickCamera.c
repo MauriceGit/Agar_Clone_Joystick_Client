@@ -113,7 +113,7 @@ void calcJoyCameraMovement (double interval)
  * Hier findet die komplette Initialisierung des kompletten SPIEeles statt.
  * Inklusive der Datenhaltung und des SPIEelfeldes.
  */
-int initJoyCamera ()
+int initJoyCamera (char* name)
 {
     G_JoyUpVector = {.x=0, .y=1, .z=0};
     G_JoyViewVector = {.x=-CAMERA_X, .y=-CAMERA_Y, .z=-CAMERA_Z};
@@ -122,7 +122,7 @@ int initJoyCamera ()
     G_JoyCameraTranslation = {.x=0, .y=0, .z=0};
     G_JoyCameraPosition = {.x=CAMERA_X, .y=CAMERA_Y, .z=CAMERA_Z};
 
-    if (!initializeHMD()) {
+    if (!initializeHMD(name)) {
         printf("ERROR: hmd could not be initialized.\n");
         return 0;
     }

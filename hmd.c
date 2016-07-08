@@ -149,8 +149,8 @@ short getTranslationAxisValue(int axis) {
  * Initialisiert/Überprüft die Verbindung mit dem HMD.
  * @return 1 = okay; 0 = fehler
  */
-int initializeHMD() {
-    if  (!startDeviceConnection(JOY_DEV)) {
+int initializeHMD(char* name) {
+    if  (!startDeviceConnection(name)) {
         return 0;
     }
 

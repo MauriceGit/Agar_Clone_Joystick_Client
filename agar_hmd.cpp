@@ -791,7 +791,7 @@ GLuint loadShaders(char * vertexShader, char * fragmentShader){
     return ProgramID;
 }
 
-int initAndStartIO (char* title, int width, int height)
+int initAndStartIO (char* title, char* joystickSrc, int width, int height)
 {
     G_Width = width;
     G_Height = height;
@@ -803,7 +803,7 @@ int initAndStartIO (char* title, int width, int height)
 
     if (createWindow())
     {
-        G_JoystickWorking = initJoyCamera();
+        G_JoystickWorking = initJoyCamera(joystickSrc);
         G_JoystickInput = G_JoystickWorking;
 
         GLenum err = glewInit();
@@ -854,7 +854,9 @@ void handleGraphics(void * aArg) {
 
     glfwSetErrorCallback(error_callback);
 
-    if (!initAndStartIO (title, 1920, 1080))
+    char* joystickSrc = (char*)(aArg);
+
+    if (!initAndStartIO (title, joystickSrc, 1920, 1080))
     {
         fprintf (stderr, "Initialisierung fehlgeschlagen!\n");
         glfwTerminate();
@@ -871,10 +873,17 @@ void handleGraphics(void * aArg) {
  * =====================================================================
  */
 
-int main()
+int main(int argc, char* argv[])
 {
     thread handleWS   (handleWSData, 0);
-    thread handleGraphic (handleGraphics, 0);
+
+    char* name = "/dev/input/js0";
+
+    if (argc > 1) {
+        name = argv[1];
+    }
+
+    thread handleGraphic (handleGraphics, name);
 
     handleWS.join();
     handleGraphic.join();

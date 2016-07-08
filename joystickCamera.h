@@ -17,6 +17,6 @@ double getJoyCenter(int axis);
 /* ------- BERECHNUNGEN ------- */
 void calcJoyCameraMovement(double interval);
 
-int initJoyCamera();
+int initJoyCamera (char* name);
 
 #endif

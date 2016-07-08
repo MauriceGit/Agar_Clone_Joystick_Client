@@ -25,7 +25,7 @@ short getTranslationAxisValue(int axis);
  * Initialisiert/Überprüft die Verbindung mit dem HMD.
  * @return 1 = okay; 0 = fehler
  */
-int initializeHMD();
+int initializeHMD(char* name);
 
 /**
  * Liefert die Roll- Pitch- und Yaw-Winkel

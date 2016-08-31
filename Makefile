@@ -16,7 +16,6 @@ LD_LIBS  = `pkg-config glfw3 --static --cflags --libs` -lGLU -lGL -lGLEW -lpthre
 
 .PHONY: all
 
-# TARGETS
 all: $(TARGET)
 
 $(TARGET): clean compile link

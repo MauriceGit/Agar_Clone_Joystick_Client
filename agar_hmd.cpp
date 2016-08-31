@@ -115,6 +115,9 @@ map <int, Toxin*>   G_ToxinMap;
 map <int, Bot*>     G_BotMap;
 map <int, BotInfo*> G_BotInfoMap;
 
+int G_GraphicsFinished = 0;
+int G_WSFinished = 0;
+
 mutex G_m;
 
 /*
@@ -289,11 +292,14 @@ void handleWSData(void * aArg) {
     }
     assert(ws);
     while (ws->getReadyState() != WebSocket::CLOSED) {
+        if (G_GraphicsFinished) {
+            break;
+        }
         ws->poll();
         ws->dispatch(handle_message);
     }
     delete ws;
-
+    G_WSFinished = 1;
 }
 
 /*
@@ -669,7 +675,7 @@ void mainLoop (GLFWwindow * window)
 
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window) && !G_WSFinished)
     {
         if (G_JoystickWorking) {
             calcJoyCameraMovement(lastCallTime);
@@ -843,6 +849,7 @@ void handleGraphics(void * aArg) {
 
     glfwTerminate();
 
+    G_GraphicsFinished = 1;
 }
 
 /*

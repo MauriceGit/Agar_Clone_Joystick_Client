@@ -22,9 +22,11 @@ all: $(TARGET)
 $(TARGET): clean compile link
 
 clean:
-	rm -f $(TARGET)
-	rm -f $(OBJS_C)
-	rm -f $(OBJS_CPP)
+	@echo -n "cleaning ... "
+	@rm -f $(TARGET)
+	@rm -f $(OBJS_C)
+	@rm -f $(OBJS_CPP)
+	@echo "done"
 
 compile:
 	@echo -n "compiling source files ... "
@@ -34,5 +36,5 @@ compile:
 
 link:
 	@echo -n "linking object files ... "
-	$(LD) $(LD_FLAGS) -o $(TARGET) $(OBJS_C) $(OBJS_CPP) $(LD_LIBS)
+	@$(LD) $(LD_FLAGS) -o $(TARGET) $(OBJS_C) $(OBJS_CPP) $(LD_LIBS)
 	@echo "done"

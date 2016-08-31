@@ -22,7 +22,6 @@ $(TARGET): clean compile link
 
 clean:
 	@echo -n "cleaning ... "
-	@rm -f $(TARGET)
 	@rm -f $(OBJS_C)
 	@rm -f $(OBJS_CPP)
 	@echo "done"

@@ -517,7 +517,6 @@ void printHelp() {
     printf("    'i' | 'I': Toggle between the Joystick and Mouse for camera control.\n");
     printf("    'F1': Toggle wireframe-Mode.\n");
     printf("    'q' | 'Q' | 'Esc': Exit the program.\n");
-    printf("                       You might have to additionally Ctrl+C the websocket connection.\n");
     printf("\n\n");
 }
 

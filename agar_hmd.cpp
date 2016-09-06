@@ -1,12 +1,10 @@
 
 #include <iostream>
+#include <map>
 #include "json/json.hpp"
 #include "tinythread/tinythread.h"
 #include "tinythread/fast_mutex.h"
-//#include <mutex.h>
 #include "easywsclient/easywsclient.hpp"
-//#include <unordered_map>
-#include <map>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -19,7 +17,6 @@ using easywsclient::WebSocket;
 using namespace tthread;
 using namespace std;
 using json = nlohmann::json;
-
 
 /*
  * =====================================================================
@@ -118,8 +115,6 @@ map <int, BotInfo*> G_BotInfoMap;
 int G_GraphicsFinished = 0;
 int G_WSFinished = 0;
 
-mutex G_m;
-
 /*
  * =====================================================================
  * GLOBAL STUFF FOR GRAPHICS SECTION
@@ -135,36 +130,20 @@ char* G_WindowTitle;
 int G_FullScreen = 1;
 GLFWwindow * G_Window = NULL;
 GLuint G_ShaderColor;
-GLuint G_ObjectsBuffer;
-GLfloat G_Objects[] = {
-    -15.0, -15.0, -15.0,
-    15.0, -15.0, -15.0,
-    15.0, 15.0, -15.0,
-    -15.0, -15.0, -15.0,
-    15.0, 15.0, -15.0,
-    -15.0, 15.0, -15.0
-};
+
+double G_FieldSize = 1000.0;
+GLfloat G_LightPos[] = {13,150,19};
+GLfloat G_LightMass[] = {500};
+GLfloat G_LightColor[] = {1,1,0};
+GLfloat G_ToxinColor[] = {1,0,0};
+
 Geometry G_Sphere;
-Geometry G_Cube;
 
 /*
  * =====================================================================
  * WEBSOCKET STUFF
  * =====================================================================
  */
-
-void deleteBot(int botId) {
-    Bot* bot = G_BotMap[botId];
-    if (bot) {
-        map<int, Blob*> blobs = bot->blobMap;
-        for (auto b : blobs) {
-            delete b.second;
-            //blobs.erase(b.first);
-        }
-        delete bot;
-        //G_BotMap.erase(botId);
-    }
-}
 
 void handle_message(const std::string & message)
 {
@@ -228,7 +207,6 @@ void handle_message(const std::string & message)
         int botId = stoi(kv.first);
         Bot* bot = new Bot();
 
-        // Probably make this more memory-friendly?
         std::map<string, json> blobs = (kv.second)["blobs"];
         for (auto&& kv2 : blobs) {
             int blobId = stoi(kv2.first);
@@ -315,32 +293,7 @@ void registerCallBacks (GLFWwindow * window);
 void mainLoop (GLFWwindow * window);
 void setProjection (GLdouble aspect);
 
-void drawColoredQuad(GLfloat r, GLfloat g, GLfloat b) {
-    glDisable(GL_CULL_FACE);
-    glUseProgram(G_ShaderColor);
-        GLfloat mp[16], mv[16];
-        glGetFloatv(GL_PROJECTION_MATRIX, mp);
-        glGetFloatv(GL_MODELVIEW_MATRIX, mv);
-        glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "projMatrix"),  1, GL_FALSE, &mp[0]);
-        glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
-
-        GLfloat color[] = {r, g, b};
-        GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, color);
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
-
-        glBindBuffer (GL_ARRAY_BUFFER, G_ObjectsBuffer);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glDisableVertexAttribArray(0);
-        glBindBuffer (GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
-    glEnable(GL_CULL_FACE);
-}
-
-void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
+void drawColoredSpheres() {
     glDisable(GL_CULL_FACE);
     glUseProgram(G_ShaderColor);
         GLfloat mp[16], mv[16];
@@ -350,9 +303,9 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
         glUniformMatrix4fv(glGetUniformLocation(G_ShaderColor, "viewMatrix"),  1, GL_FALSE, &mv[0]);
 
         GLfloat cam[] = {GLfloat(getCameraPosition(0)), GLfloat(getCameraPosition(1)), GLfloat(getCameraPosition(2))};
-        GLfloat light[] = {13,150,19};
+
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "cameraPos"), 1, cam);
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "light"), 1, light);
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "light"), 1, G_LightPos);
 
         glBindVertexArray(G_Sphere.vertexArrayObject);
         glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
@@ -360,27 +313,24 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
 
         GLfloat scale = 1.0;
         // To put the field from -500/500 and not 0/1000.
-        GLfloat displacement = -500.0;
+        GLfloat displacement = -G_FieldSize/2.0;
 
-
-        GLfloat translation[] = {GLfloat(light[0]), light[1], GLfloat(light[2])};
+        GLfloat translation[] = {GLfloat(G_LightPos[0]), G_LightPos[1], GLfloat(G_LightPos[2])};
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "translation"), 1, translation);
-        GLfloat massLight[] = {500};
-        glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, massLight);
-        GLfloat colorLight[] = {1, 1, 0};
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorLight);
-        GLint isLight = 1;
-        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
+
+        glUniform1fv(glGetUniformLocation(G_ShaderColor, "mass"), 1, G_LightMass);
+
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, G_LightColor);
+
+        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), 1);
         glBindVertexArray(G_Sphere.vertexArrayObject);
         glDrawArrays(GL_TRIANGLES, 0, G_Sphere.numVertices);
         glBindVertexArray(0);
 
-        isLight = 0;
-        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), isLight);
+        glUniform1i(glGetUniformLocation(G_ShaderColor, "isLight"), 0);
 
         // Toxin
-        GLfloat colorToxin[] = {r, g, b};
-        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorToxin);
+        glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, G_ToxinColor);
         for(auto toxinIt = G_ToxinMap.begin(); toxinIt != G_ToxinMap.end(); toxinIt++) {
             Toxin* toxin = toxinIt->second;
             if (toxin) {
@@ -452,14 +402,10 @@ void drawColoredSphere(GLfloat r, GLfloat g, GLfloat b) {
 
 void cbDisplay (GLFWwindow * window)
 {
-    int i;
-    int modValue = 3000;
-    double difValue = 10.0;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     glViewport (0, 0, G_Width, G_Height);
     setProjection ((double)G_Width/G_Height);
@@ -475,10 +421,8 @@ void cbDisplay (GLFWwindow * window)
              getJoyUp(0), getJoyUp(1), getJoyUp(2));
     }
 
-    //drawColoredQuad(1,0,0);
-    drawColoredSphere(1,0,0);
+    drawColoredSpheres();
 
-    /* fuer DoubleBuffering */
     glfwSwapBuffers(window);
 
     glfwSwapInterval(0);
@@ -486,10 +430,8 @@ void cbDisplay (GLFWwindow * window)
 
 void toggleWireframeMode (void)
 {
-    /* Flag: Wireframe: ja/nein */
     static GLboolean wireframe = GL_FALSE;
 
-    /* Modus wechseln */
     wireframe = !wireframe;
 
     if (wireframe)
@@ -549,26 +491,6 @@ void cbKeyboard (GLFWwindow* window, int key, int scancode, int action, int mods
                 break;
         }
     }
-
-    if (action == GLFW_RELEASE) {
-
-        switch (key)
-        {
-            case GLFW_KEY_LEFT:
-
-                break;
-            case GLFW_KEY_RIGHT:
-
-                break;
-            case GLFW_KEY_UP:
-                setKey (1,0);
-                break;
-            case GLFW_KEY_DOWN:
-                setKey (0,0);
-                break;
-        }
-    }
-
 }
 
 /**
@@ -624,11 +546,9 @@ void cbReshape (GLFWwindow* window, int w, int h)
 
 double cbTimer (int lastCallTime)
 {
-    /* Seit dem Programmstart vergangene Zeit in Sekunden */
     G_Interval = glfwGetTime();
     glfwSetTime(0.0);
 
-    //calcTimeRelatedStuff(G_Interval);
     return G_Interval;
 }
 
@@ -693,7 +613,6 @@ int initScene (void)
     glEnable (GL_CULL_FACE);
     glEnable (GL_NORMALIZE);
     glEnable (GL_LIGHTING);
-    //initLight ();
 
     return 1;
 }
@@ -717,8 +636,6 @@ GLuint loadShaders(char * vertexShader, char * fragmentShader){
     /* Create the shaders */
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-    /* Read Shader from File was here */
 
     GLint Result = GL_FALSE;
     int InfoLogLength;
@@ -779,7 +696,7 @@ int initAndStartIO (char* title, char* joystickSrc, int width, int height)
     G_Width = width;
     G_Height = height;
     G_WindowTitle = title;
-    G_FullScreen = 0;
+    G_FullScreen = 1;
 
     if (!glfwInit())
         return 0;
@@ -805,11 +722,6 @@ int initAndStartIO (char* title, char* joystickSrc, int width, int height)
 
         registerCallBacks (G_Window);
 
-        glGenBuffers(1, &G_ObjectsBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, G_ObjectsBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(G_Objects), G_Objects, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
         G_Sphere = createUnitSphere(5);
 
         printf ("--> Initialisation finished\n"); fflush(stdout);
@@ -832,7 +744,7 @@ static void error_callback(int error, const char* description)
 }
 
 void handleGraphics(void * aArg) {
-    char * title = "lots and lots of particles ... yeay ... :-)";
+    char * title = "lots and lots of blobs ... yeay ... :-)";
     srand (time (0));
 
     glfwSetErrorCallback(error_callback);

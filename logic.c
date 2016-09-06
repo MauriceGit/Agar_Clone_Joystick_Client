@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 
 
 /* ---- Eigene Header einbinden ---- */
@@ -28,31 +27,8 @@ Movement G_MouseMove = {0,0,0};
 /** Startpunkt der Mausbewegung */
 Vec3D G_LastMouseCenter;
 
-/** Partikel hinzufügen? */
-int G_UpDownKeys[2] = {0,0};
-/** FPS */
-int G_FPS = 0;
-/** FPS counter */
-double G_Counter = 0.0-EPS;
 
 /* ------- GETTER / SETTER ------- */
-
-int getFPS(void)
-{
-    return G_FPS;
-}
-
-/**
- * Setzt, ob ein Up/Down-Key gedrückt ist.
- * key == 0 = down
- * key == 1 = up
- * value = gesetzt/nicht gesetzt.
- */
-void setKey (int key, int value)
-{
-    if (key < 2)
-        G_UpDownKeys[key] = value;
-}
 
 /**
  * Set-Function für den Status der Maus
@@ -139,23 +115,6 @@ void setCameraZoom(int x,int y)
     G_LastMouseCenter.z = y;
 
     G_CameraPosition = multiplyVectorScalar(G_CameraPosition, factor);
-}
-
-/* ------- BERECHNUNGEN ------- */
-
-/**
- * Berechnet alle Funktionen, die vom interval abhängig sind
- * @param interval - Zeit
- */
-void calcTimeRelatedStuff (double interval)
-{
-    G_Counter += interval;
-
-    if (G_Counter >= 1.0)
-        G_Counter = 0.0 -EPS;
-
-    if (G_Counter <= 0.0)
-        G_FPS = (int) 1.0/interval;
 }
 
 /* ------- INIT ------- */

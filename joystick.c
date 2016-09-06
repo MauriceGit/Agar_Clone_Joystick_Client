@@ -16,7 +16,7 @@
  *
  * Das Auslesen ist eventbasiert.
  *
- * Author: Mervyn McCreight
+ * Author: Mervyn McCreight, Maurice Tollmien
  *
  * zuletzt geändert: 4.4.2013
  */

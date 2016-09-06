@@ -3,7 +3,7 @@
 #define __DEBUG_GL_H__
 /**
  * @file
- * Programmlogik und Datenhaltung
+ * Vector operations.
  *
  * @author Maurice Tollmien
  */

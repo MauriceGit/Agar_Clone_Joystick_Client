@@ -1,18 +1,17 @@
-/*
+/**
  * hmd.h
  *
  *  Author: Maurice Tollmien
  */
 
-/* Joystickbehandlungsfunktionen */
 #include "joystick.h"
 #include "mtQuaternions.h"
 
 #define HMD_PI 3.141592654
-#define JOY_DEV "/dev/input/js1"
 
 /**
  * Liefert das MTQuaternion vom HMD normalisiert zurück.
+ * factor entspricht dem Zeitinterval zwischen jedem Frame.
  */
 MTQuaternion getMTQuaternion(MTVec3D jawAxis, MTVec3D turnAxis, double minJawAngle, double maxJawAngle, double factor);
 

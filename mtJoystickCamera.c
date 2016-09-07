@@ -15,9 +15,15 @@ MTVec3D G_JoyViewVector;
 MTVec3D G_JoyCameraTranslation;
 MTVec3D G_JoyCameraPosition;
 
-
 MTVec3D mtGetJoyCameraPosition () {
     return G_JoyCameraPosition;
+}
+
+/**
+ * Just for convenience.
+ */
+MTVec3D mtGetJoyPosition () {
+    return mtGetJoyCameraPosition();
 }
 
 MTVec3D mtGetJoyUp() {

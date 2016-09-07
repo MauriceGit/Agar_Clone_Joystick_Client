@@ -448,9 +448,9 @@ void cbDisplay (GLFWwindow * window)
         MTVec3D cam = mtGetJoyCameraPosition();
         MTVec3D center = mtGetJoyCenter();
         MTVec3D up = mtGetJoyUp();
-        gluLookAt (cam.x, cam.y, cam.z,
-             center.x, center.y, center.z,
-             up.x, up.y, up.z);
+        gluLookAt (cam.x,    cam.y,    cam.z,
+                   center.x, center.y, center.z,
+                   up.x,     up.y,     up.z);
     }
 
     drawColoredSpheres();

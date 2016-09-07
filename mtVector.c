@@ -1,30 +1,25 @@
 /**
- * @file
- * Hier ist die Datenhaltung und Programmlogik
+ * Some basic vector calculations.
+ * All operations are prefixed with 'mt' to avoid name clashes and get a
+ * attempt for a unique prefix.
  *
  * @author Maurice Tollmien
  */
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-/* ---- System Header einbinden ---- */
 #include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
+//#include <stddef.h>
+//#include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 
-/* ---- Eigene Header einbinden ---- */
-#include "types.h"
-#include "vector.h"
+//#include "types.h"
+#include <GL/gl.h>
+#include "mtVector.h"
 
 
 /**
  * Printet einen Vector aus.
  */
-void printVector (Vec3D a)
+void mtPrintVector (Vec3D a)
 {
     int i;
     printf("printVector:\n");
@@ -38,7 +33,7 @@ void printVector (Vec3D a)
  * @param y
  * @param z
  */
-Vec3D toVector3D(GLfloat x, GLfloat y, GLfloat z)
+Vec3D mtToVector3D(float x, float y, float z)
 {
     Vec3D res;
     res.x = x;
@@ -52,7 +47,7 @@ Vec3D toVector3D(GLfloat x, GLfloat y, GLfloat z)
  * @param v
  *@return float
  */
-float vectorLength3D(Vec3D vector)
+float mtVectorLength3D(Vec3D vector)
 {
   return sqrt((vector.x*vector.x)+
               (vector.y*vector.y)+
@@ -64,11 +59,11 @@ float vectorLength3D(Vec3D vector)
  * @param v der zu normierende Vektor
  * @return der normierte Vektor
  */
-Vec3D normVector3D(Vec3D vector)
+Vec3D mtNormVector3D(Vec3D vector)
 {
-    float l = vectorLength3D(vector);
+    float l = mtVectorLength3D(vector);
     if (l >= .00001f)
-        return toVector3D(vector.x/l, vector.y/l, vector.z/l);
+        return mtToVector3D(vector.x/l, vector.y/l, vector.z/l);
     return vector;
 }
 
@@ -78,9 +73,9 @@ Vec3D normVector3D(Vec3D vector)
  * @param
  * @return
  */
-Vec3D crossProduct3D(Vec3D a, Vec3D b)
+Vec3D mtCrossProduct3D(Vec3D a, Vec3D b)
 {
-    Vec3D product = toVector3D((a.x*b.z - a.z*b.y),
+    Vec3D product = mtToVector3D((a.x*b.z - a.z*b.y),
                       (a.z*b.x - a.x*b.z),
                       (a.x*b.y - a.y*b.x));
     return product;
@@ -89,7 +84,7 @@ Vec3D crossProduct3D(Vec3D a, Vec3D b)
 /**
  * Multipliziert einen Vektor mit einem Skalar.
  */
-Vec3D multiplyVectorScalar (Vec3D a, double s)
+Vec3D mtMultiplyVectorScalar (Vec3D a, double s)
 {
     Vec3D res;
     res.x = a.x * s;
@@ -98,7 +93,7 @@ Vec3D multiplyVectorScalar (Vec3D a, double s)
     return res;
 }
 
-double scalarProduct (Vec3D a, Vec3D b)
+double mtScalarProduct (Vec3D a, Vec3D b)
 {
     return a.x*b.x + a.y*b.y + a.z*b.z;
 }
@@ -106,7 +101,7 @@ double scalarProduct (Vec3D a, Vec3D b)
 /**
  * Zieht b von a ab, also: a-b
  */
-Vec3D subtractVectorVector (Vec3D a, Vec3D b)
+Vec3D mtSubtractVectorVector (Vec3D a, Vec3D b)
 {
     Vec3D res;
     res.x = a.x - b.x;
@@ -118,15 +113,15 @@ Vec3D subtractVectorVector (Vec3D a, Vec3D b)
 /**
  * Teilt den Vector a durch s.
  */
-Vec3D divideVectorScalar (Vec3D a, double s)
+Vec3D mtDivideVectorScalar (Vec3D a, double s)
 {
-    return multiplyVectorScalar(a, 1.0/s);
+    return mtMultiplyVectorScalar(a, 1.0/s);
 }
 
 /**
  * Addiert a und b und schreibt das Ergebnis in res.
  */
-Vec3D addVectorVector (Vec3D a, Vec3D b)
+Vec3D mtAddVectorVector (Vec3D a, Vec3D b)
 {
     Vec3D res;
     res.x = a.x + b.x;
@@ -139,27 +134,27 @@ Vec3D addVectorVector (Vec3D a, Vec3D b)
  * Wandelt eine Zahl (Grad) in Radiant.
  * deg muss im Wertebereich 0..359 liegen!
  */
-double degToRad (double deg)
+double mtDegToRad (double deg)
 {
-    return deg*PI/180.0;
+    return deg*MT_PI/180.0;
 }
 
 /**
  * Wandelt eine Zahl (Radiant) in Grad um.
  * deg muss im Wertebereich 0..PI liegen!
  */
-double radToDeg (double rad)
+double mtRadToDeg (double rad)
 {
-    return rad*180.0/PI;
+    return rad*180.0/MT_PI;
 }
 
 /**
  * Berechnet den Winkel zwischen zwei Vektoren und gibt das Ergebnis in
  * ° zurück (nicht radiant!).
  */
-double angleVectorVector (Vec3D a, Vec3D b)
+double mtAngleVectorVector (Vec3D a, Vec3D b)
 {
-    return radToDeg (acos (scalarProduct(a, b) / (vectorLength3D(a)*vectorLength3D(b))));
+    return mtRadToDeg (acos (mtScalarProduct(a, b) / (mtVectorLength3D(a)*mtVectorLength3D(b))));
 }
 
 

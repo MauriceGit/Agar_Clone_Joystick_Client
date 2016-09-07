@@ -11,7 +11,7 @@
 
 /* ---- My Header ---- */
 #include "sphere.h"
-#include "vector.h"
+#include "mtVector.h"
 
 
 
@@ -32,15 +32,15 @@ void rendering_setAttributePointer(GLuint vertexArrayObject, GLuint buffer, GLin
 
 
 Vec3D bilinearPosition(Vec3D v0, Vec3D v3, Vec3D edge01, Vec3D edge32, float u, float v) {
-    Vec3D point01 = addVectorVector(v0, multiplyVectorScalar(edge01, u));
-    Vec3D point32 = addVectorVector(v3, multiplyVectorScalar(edge32, u));
-    Vec3D diff = multiplyVectorScalar(subtractVectorVector(point32, point01), v);
-    return addVectorVector(point01, diff);
+    Vec3D point01 = mtAddVectorVector(v0, mtMultiplyVectorScalar(edge01, u));
+    Vec3D point32 = mtAddVectorVector(v3, mtMultiplyVectorScalar(edge32, u));
+    Vec3D diff = mtMultiplyVectorScalar(mtSubtractVectorVector(point32, point01), v);
+    return mtAddVectorVector(point01, diff);
 }
 
 void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D v3, Vec3D* data) {
-    Vec3D edge01 = subtractVectorVector(v1, v0);
-    Vec3D edge32 = subtractVectorVector(v2, v3);
+    Vec3D edge01 = mtSubtractVectorVector(v1, v0);
+    Vec3D edge32 = mtSubtractVectorVector(v2, v3);
     float xStep = 1.0f / numSubdivisions;
     float yStep = 1.0f / numSubdivisions;
     int stride = sizeof(Vec3D) + sizeof(Vec3D);
@@ -65,18 +65,18 @@ void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Ve
             data[2*(vertexIndex + 4)] = p2;
             data[2*(vertexIndex + 5)] = p3;
 
-            Vec3D sp10 = subtractVectorVector(p0, p1);
-            Vec3D sp12 = subtractVectorVector(p2, p1);
-            Vec3D sp30 = subtractVectorVector(p0, p3);
-            Vec3D sp32 = subtractVectorVector(p2, p3);
+            Vec3D sp10 = mtSubtractVectorVector(p0, p1);
+            Vec3D sp12 = mtSubtractVectorVector(p2, p1);
+            Vec3D sp30 = mtSubtractVectorVector(p0, p3);
+            Vec3D sp32 = mtSubtractVectorVector(p2, p3);
 
 // Hier noch +1 rechnen, weil die Normale einen Vec3D weiter liegt.
-            Vec3D n1 = crossProduct3D(sp12, sp10);
+            Vec3D n1 = mtCrossProduct3D(sp12, sp10);
             data[2*(vertexIndex + 0) + 1] = n1;
             data[2*(vertexIndex + 1) + 1] = n1;
             data[2*(vertexIndex + 2) + 1] = n1;
 
-            Vec3D n2 = crossProduct3D(sp30, sp32);
+            Vec3D n2 = mtCrossProduct3D(sp30, sp32);
             data[2*(vertexIndex + 3) + 1] = n2;
             data[2*(vertexIndex + 4) + 1] = n2;
             data[2*(vertexIndex + 5) + 1] = n2;
@@ -90,12 +90,12 @@ void createUnitCubeVertices(int numSubdivisions, Vec3D* data) {
 // Hier das offset jetzt auch nicht mehr auf byte-Basis, sondern auf basis von Vec3D
     int verticesPerSide = numSubdivisions*numSubdivisions*6;
     int vec3dsPerSide = 2*verticesPerSide;
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1,  1), toVector3D( 1, -1,  1), toVector3D( 1,  1,  1), toVector3D(-1,  1,  1), data + 0*vec3dsPerSide); // Front
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D(-1, -1,  1), toVector3D(-1,  1,  1), toVector3D(-1,  1, -1), data + 1*vec3dsPerSide); // Left
-    createSurfaceVertices(numSubdivisions, toVector3D( 1, -1,  1), toVector3D( 1, -1, -1), toVector3D( 1,  1, -1), toVector3D( 1,  1,  1), data + 2*vec3dsPerSide); // Right
-    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1,  1), toVector3D( 1,  1,  1), toVector3D( 1,  1, -1), toVector3D(-1,  1, -1), data + 3*vec3dsPerSide); // Top
-    createSurfaceVertices(numSubdivisions, toVector3D(-1, -1, -1), toVector3D( 1, -1, -1), toVector3D( 1, -1,  1), toVector3D(-1, -1,  1), data + 4*vec3dsPerSide); // Bottom
-    createSurfaceVertices(numSubdivisions, toVector3D(-1,  1, -1), toVector3D( 1,  1, -1), toVector3D( 1, -1, -1), toVector3D(-1, -1, -1), data + 5*vec3dsPerSide); // Back
+    createSurfaceVertices(numSubdivisions, mtToVector3D(-1, -1,  1), mtToVector3D( 1, -1,  1), mtToVector3D( 1,  1,  1), mtToVector3D(-1,  1,  1), data + 0*vec3dsPerSide); // Front
+    createSurfaceVertices(numSubdivisions, mtToVector3D(-1, -1, -1), mtToVector3D(-1, -1,  1), mtToVector3D(-1,  1,  1), mtToVector3D(-1,  1, -1), data + 1*vec3dsPerSide); // Left
+    createSurfaceVertices(numSubdivisions, mtToVector3D( 1, -1,  1), mtToVector3D( 1, -1, -1), mtToVector3D( 1,  1, -1), mtToVector3D( 1,  1,  1), data + 2*vec3dsPerSide); // Right
+    createSurfaceVertices(numSubdivisions, mtToVector3D(-1,  1,  1), mtToVector3D( 1,  1,  1), mtToVector3D( 1,  1, -1), mtToVector3D(-1,  1, -1), data + 3*vec3dsPerSide); // Top
+    createSurfaceVertices(numSubdivisions, mtToVector3D(-1, -1, -1), mtToVector3D( 1, -1, -1), mtToVector3D( 1, -1,  1), mtToVector3D(-1, -1,  1), data + 4*vec3dsPerSide); // Bottom
+    createSurfaceVertices(numSubdivisions, mtToVector3D(-1,  1, -1), mtToVector3D( 1,  1, -1), mtToVector3D( 1, -1, -1), mtToVector3D(-1, -1, -1), data + 5*vec3dsPerSide); // Back
 }
 
 Geometry createSurface(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D v3) {

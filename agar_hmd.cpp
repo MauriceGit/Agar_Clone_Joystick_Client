@@ -807,14 +807,15 @@ int main(int argc, char* argv[])
     G_BotMutex     = fast_mutex();
     G_BotInfoMutex = fast_mutex();
 
-    thread handleWS   (handleWSData, 0);
-
     char* name = "/dev/input/js0";
 
     if (argc > 1) {
         name = argv[1];
     }
 
+    // Two synchronised threads handling graphics and data input parallel so a smooth
+    // animation can be accomplished.
+    thread handleWS   (handleWSData, 0);
     thread handleGraphic (handleGraphics, name);
 
     handleWS.join();

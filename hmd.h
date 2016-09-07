@@ -6,7 +6,7 @@
 
 /* Joystickbehandlungsfunktionen */
 #include "joystick.h"
-#include "quaternions.h"
+#include "mtQuaternions.h"
 
 #define HMD_PI 3.141592654
 #define JOY_DEV "/dev/input/js1"

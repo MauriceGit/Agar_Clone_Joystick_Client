@@ -3,7 +3,7 @@
 #ifndef __SPHERE_H__
 #define __SPHERE_H__
 
-#include "vector.h"
+#include "mtVector.h"
 
 /**
  * Interface for spheres.

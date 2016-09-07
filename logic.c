@@ -15,7 +15,7 @@
 
 /* ---- Eigene Header einbinden ---- */
 #include "logic.h"
-#include "vector.h"
+#include "mtVector.h"
 #include "types.h"
 
 /** Mausbewegung zoom/move/none */
@@ -81,8 +81,8 @@ double getCameraPosition (int axis)
  */
 void setCameraMovement(int x,int y)
 {
-    Vec3D tmp = toVector3D(G_CameraPosition.x, G_CameraPosition.y,G_CameraPosition.z);
-    double factor, radius = vectorLength3D(G_CameraPosition);
+    Vec3D tmp = mtToVector3D(G_CameraPosition.x, G_CameraPosition.y,G_CameraPosition.z);
+    double factor, radius = mtVectorLength3D(G_CameraPosition);
 
     G_MouseMove[0] = x-G_LastMouseCenter.x;
     G_MouseMove[2] = y-G_LastMouseCenter.z;
@@ -95,9 +95,9 @@ void setCameraMovement(int x,int y)
     G_CameraPosition.z = -sin(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.x + cos(-G_MouseMove[0]*PI/180.0/CAMERA_MOVEMENT_SPEED)*tmp.z;
 
     /* Bewegung oben/unten */
-    G_CameraPosition.y += G_MouseMove[2]/(CAMERA_MOVEMENT_SPEED/2)*(vectorLength3D(G_CameraPosition)/100.0);
-    factor = 1.0 / (vectorLength3D(G_CameraPosition) / radius);
-    G_CameraPosition = multiplyVectorScalar (G_CameraPosition, factor);
+    G_CameraPosition.y += G_MouseMove[2]/(CAMERA_MOVEMENT_SPEED/2)*(mtVectorLength3D(G_CameraPosition)/100.0);
+    factor = 1.0 / (mtVectorLength3D(G_CameraPosition) / radius);
+    G_CameraPosition = mtMultiplyVectorScalar (G_CameraPosition, factor);
 
 }
 
@@ -114,7 +114,7 @@ void setCameraZoom(int x,int y)
     G_LastMouseCenter.x = x;
     G_LastMouseCenter.z = y;
 
-    G_CameraPosition = multiplyVectorScalar(G_CameraPosition, factor);
+    G_CameraPosition = mtMultiplyVectorScalar(G_CameraPosition, factor);
 }
 
 /* ------- INIT ------- */
@@ -135,7 +135,7 @@ void initCameraPosition ()
  */
 void initGame ()
 {
-    G_LastMouseCenter = toVector3D(0,0,0);
+    G_LastMouseCenter = mtToVector3D(0,0,0);
     initCameraPosition();
 }
 

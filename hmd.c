@@ -7,7 +7,7 @@
 
 /* - eigene Header einbinden */
 #include "hmd.h"
-#include "quaternions.h"
+#include "mtQuaternions.h"
 #include "types.h"
 
 #define NORM_PITCH 1.188
@@ -106,7 +106,6 @@ float posToAngle(short pos, double factor) {
  */
 Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, double maxJawAngle, double factor) {
     short a,b;
-    Quaternion q, qA, qB, qRes;
 
     /* im Fehlerfall gib 0 zurück. */
     if (!(
@@ -114,6 +113,7 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, doub
       && getAxisValue(1, &b)
       )) {
           printf("ERROR reading an axis value!\n");
+          Quaternion q;
           return q;
     }
 
@@ -122,13 +122,12 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, doub
     angle = (angle < 0.0 && angle > maxJawAngle) ? 0.0 : angle;
 
 
-    qB = createQuaternion(jawAxis, angle);
+    Quaternion qB = mtCreateQuaternion(jawAxis, angle);
+    Quaternion qA = mtCreateQuaternion(turnAxis, -posToAngle(a, factor));
 
-    qA = createQuaternion(turnAxis, -posToAngle(a, factor));
+    Quaternion qRes = mtAddQuaternionQuaternion(&qA, &qB);
 
-    addQuaternionQuaternion(&qA, &qB, &qRes);
-
-    normQuaternion(&qRes);
+    mtNormQuaternion(&qRes);
     return qRes;
 }
 

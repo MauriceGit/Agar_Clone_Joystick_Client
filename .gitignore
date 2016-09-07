@@ -2,4 +2,5 @@ tinythread/*.o
 json/*.o
 ws_client/*.o
 easywsclient/*.o
+*.o
 

@@ -2,13 +2,14 @@
 
 in vec3 normal;
 in vec3 pos;
-in vec3 lightPos;
-out vec4 Color;
+uniform vec3 light;
 uniform vec3 colorIn;
 uniform int isLight;
 
+out vec4 Color;
+
 void main(){
-    vec3 l = normalize(lightPos - pos);
+    vec3 l = normalize(light - pos);
 
     vec3 specularColor = colorIn*3;
     float dotProduct = max(dot(normal,l), 0.0);
@@ -27,7 +28,7 @@ void main(){
     vec3 ambient = colorIn / 1.5;
 
     if (isLight == 1) {
-        Color = vec4(1, 1, 0, 1);
+        Color = vec4(colorIn, 1);
     } else {
         Color = vec4(diffuseNeg/4 + diffuse/4 + ambient/4 + specular/4 + colorIn/3, 1.0);
     }

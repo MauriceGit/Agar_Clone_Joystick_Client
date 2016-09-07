@@ -115,6 +115,11 @@ map <int, BotInfo*> G_BotInfoMap;
 int G_GraphicsFinished = 0;
 int G_WSFinished = 0;
 
+fast_mutex G_FoodMutex;
+fast_mutex G_ToxinMutex;
+fast_mutex G_BotMutex;
+fast_mutex G_BotInfoMutex;
+
 /*
  * =====================================================================
  * GLOBAL STUFF FOR GRAPHICS SECTION
@@ -162,6 +167,7 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
+        G_FoodMutex.lock();
         Food* food = G_FoodMap[key];
         if (!food) {
             food = new Food(posx, posy, mass);
@@ -171,11 +177,14 @@ void handle_message(const std::string & message)
             food->mass = mass;
         }
         G_FoodMap[key] = food;
+        G_FoodMutex.unlock();
     }
 
     for (int i : j["deletedFoods"]) {
+        G_FoodMutex.lock();
         delete G_FoodMap[i];
         G_FoodMap.erase(i);
+        G_FoodMutex.unlock();
     }
     map<string, json> toxins = j["createdOrUpdatedToxins"];
     for (auto&& kv : toxins) {
@@ -185,6 +194,7 @@ void handle_message(const std::string & message)
         float mass = (kv.second)["mass"].get<float>();
 
         // overwrite old entries
+        G_ToxinMutex.lock();
         Toxin* toxin = G_ToxinMap[key];
         if (!toxin) {
             toxin = new Toxin(posx, posy, mass);
@@ -195,11 +205,14 @@ void handle_message(const std::string & message)
         }
 
         G_ToxinMap[key] = toxin;
+        G_ToxinMutex.unlock();
     }
 
     for (int i : j["deletedToxins"]) {
+        G_ToxinMutex.lock();
         delete G_ToxinMap[i];
         G_ToxinMap.erase(i);
+        G_ToxinMutex.unlock();
     }
 
     map<string, json> bots = j["createdOrUpdatedBots"];
@@ -215,10 +228,13 @@ void handle_message(const std::string & message)
             float mass = (kv2.second)["mass"].get<float>();
             bot->blobMap[blobId] = new Blob(posx, posy, mass);
         }
+        G_BotMutex.lock();
         G_BotMap[botId] = bot;
+        G_BotMutex.unlock();
     }
 
     for (int i : j["deletedBots"]) {
+        G_BotMutex.lock();
         Bot* bot = G_BotMap[i];
         if (bot) {
             map<int, Blob*> blobs = bot->blobMap;
@@ -229,6 +245,7 @@ void handle_message(const std::string & message)
             delete bot;
             G_BotMap.erase(i);
         }
+        G_BotMutex.unlock();
     }
 
     map<string, json> botInfos = j["createdOrUpdatedBotInfos"];
@@ -239,6 +256,7 @@ void handle_message(const std::string & message)
         int b = (kv.second)["color"]["B"].get<int>();
         string name = (kv.second)["name"].get<string>();
 
+        G_BotInfoMutex.lock();
         BotInfo* botInfo = G_BotInfoMap[key];
         if (!botInfo) {
             botInfo = new BotInfo(new Color(r, g, b), name);
@@ -250,14 +268,17 @@ void handle_message(const std::string & message)
         }
 
         G_BotInfoMap[key] = botInfo;
+        G_BotInfoMutex.unlock();
     }
     for (int i : j["deletedBotInfos"]) {
+        G_BotInfoMutex.lock();
         BotInfo* bi = G_BotInfoMap[i];
         if (bi) {
             delete bi->color;
             delete bi;
             G_BotInfoMap.erase(i);
         }
+        G_BotInfoMutex.unlock();
     }
 }
 
@@ -331,6 +352,7 @@ void drawColoredSpheres() {
 
         // Toxin
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, G_ToxinColor);
+        G_ToxinMutex.lock();
         for(auto toxinIt = G_ToxinMap.begin(); toxinIt != G_ToxinMap.end(); toxinIt++) {
             Toxin* toxin = toxinIt->second;
             if (toxin) {
@@ -345,9 +367,11 @@ void drawColoredSpheres() {
                 glBindVertexArray(0);
             }
         }
+        G_ToxinMutex.unlock();
 
         // Food
         GLfloat colorFood[] = {0, 1, 0};
+        G_FoodMutex.lock();
         glUniform3fv(glGetUniformLocation(G_ShaderColor, "colorIn"), 1, colorFood);
         for(auto foodIt = G_FoodMap.begin(); foodIt != G_FoodMap.end(); foodIt++) {
             Food* food = foodIt->second;
@@ -363,12 +387,15 @@ void drawColoredSpheres() {
                 glBindVertexArray(0);
             }
         }
+        G_FoodMutex.unlock();
 
         // Blobs
+        G_BotMutex.lock();
         for (auto botIt = G_BotMap.begin(); botIt != G_BotMap.end(); botIt++) {
             Bot* bot = botIt->second;
             if (bot) {
 
+                G_BotInfoMutex.lock();
                 BotInfo* botInfo = G_BotInfoMap[botIt->first];
                 if (botInfo) {
 
@@ -393,8 +420,10 @@ void drawColoredSpheres() {
                         }
                     }
                 }
+                G_BotInfoMutex.unlock();
             }
         }
+        G_BotMutex.unlock();
 
     glUseProgram(0);
     glEnable(GL_CULL_FACE);
@@ -772,6 +801,11 @@ void handleGraphics(void * aArg) {
 int main(int argc, char* argv[])
 {
     printHelp();
+
+    G_FoodMutex    = fast_mutex();
+    G_ToxinMutex   = fast_mutex();
+    G_BotMutex     = fast_mutex();
+    G_BotInfoMutex = fast_mutex();
 
     thread handleWS   (handleWSData, 0);
 

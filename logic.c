@@ -21,11 +21,11 @@
 /** Mausbewegung zoom/move/none */
 MouseInterpretType G_Mouse;
 /** Kameraposition */
-Vec3D G_CameraPosition;
+MTVec3D G_CameraPosition;
 /** Position der Maus */
 Movement G_MouseMove = {0,0,0};
 /** Startpunkt der Mausbewegung */
-Vec3D G_LastMouseCenter;
+MTVec3D G_LastMouseCenter;
 
 
 /* ------- GETTER / SETTER ------- */
@@ -81,7 +81,7 @@ double getCameraPosition (int axis)
  */
 void setCameraMovement(int x,int y)
 {
-    Vec3D tmp = mtToVector3D(G_CameraPosition.x, G_CameraPosition.y,G_CameraPosition.z);
+    MTVec3D tmp = mtToVector3D(G_CameraPosition.x, G_CameraPosition.y,G_CameraPosition.z);
     double factor, radius = mtVectorLength3D(G_CameraPosition);
 
     G_MouseMove[0] = x-G_LastMouseCenter.x;

@@ -31,30 +31,30 @@ void rendering_setAttributePointer(GLuint vertexArrayObject, GLuint buffer, GLin
 }
 
 
-Vec3D bilinearPosition(Vec3D v0, Vec3D v3, Vec3D edge01, Vec3D edge32, float u, float v) {
-    Vec3D point01 = mtAddVectorVector(v0, mtMultiplyVectorScalar(edge01, u));
-    Vec3D point32 = mtAddVectorVector(v3, mtMultiplyVectorScalar(edge32, u));
-    Vec3D diff = mtMultiplyVectorScalar(mtSubtractVectorVector(point32, point01), v);
+MTVec3D bilinearPosition(MTVec3D v0, MTVec3D v3, MTVec3D edge01, MTVec3D edge32, float u, float v) {
+    MTVec3D point01 = mtAddVectorVector(v0, mtMultiplyVectorScalar(edge01, u));
+    MTVec3D point32 = mtAddVectorVector(v3, mtMultiplyVectorScalar(edge32, u));
+    MTVec3D diff = mtMultiplyVectorScalar(mtSubtractVectorVector(point32, point01), v);
     return mtAddVectorVector(point01, diff);
 }
 
-void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D v3, Vec3D* data) {
-    Vec3D edge01 = mtSubtractVectorVector(v1, v0);
-    Vec3D edge32 = mtSubtractVectorVector(v2, v3);
+void createSurfaceVertices(int numSubdivisions, MTVec3D v0, MTVec3D v1, MTVec3D v2, MTVec3D v3, MTVec3D* data) {
+    MTVec3D edge01 = mtSubtractVectorVector(v1, v0);
+    MTVec3D edge32 = mtSubtractVectorVector(v2, v3);
     float xStep = 1.0f / numSubdivisions;
     float yStep = 1.0f / numSubdivisions;
-    int stride = sizeof(Vec3D) + sizeof(Vec3D);
+    int stride = sizeof(MTVec3D) + sizeof(MTVec3D);
     int vertexIndex = 0;
 
     for (int x = 0; x < numSubdivisions; ++x) {
         for (int y = 0; y < numSubdivisions; ++y) {
 
-            Vec3D p0 = bilinearPosition(v0, v3, edge01, edge32, (x + 0)*xStep, (y + 0)*yStep);
-            Vec3D p1 = bilinearPosition(v0, v3, edge01, edge32, (x + 1)*xStep, (y + 0)*yStep);
-            Vec3D p2 = bilinearPosition(v0, v3, edge01, edge32, (x + 1)*xStep, (y + 1)*yStep);
-            Vec3D p3 = bilinearPosition(v0, v3, edge01, edge32, (x + 0)*xStep, (y + 1)*yStep);
+            MTVec3D p0 = bilinearPosition(v0, v3, edge01, edge32, (x + 0)*xStep, (y + 0)*yStep);
+            MTVec3D p1 = bilinearPosition(v0, v3, edge01, edge32, (x + 1)*xStep, (y + 0)*yStep);
+            MTVec3D p2 = bilinearPosition(v0, v3, edge01, edge32, (x + 1)*xStep, (y + 1)*yStep);
+            MTVec3D p3 = bilinearPosition(v0, v3, edge01, edge32, (x + 0)*xStep, (y + 1)*yStep);
 
-// Hier habe ich mir die Position der Vec3Ds in byte berechnet. Da du jetzt einen Vec3D-Pointer hast musst du dir das anders berechnen.
+// Hier habe ich mir die Position der MTVec3Ds in byte berechnet. Da du jetzt einen MTVec3D-Pointer hast musst du dir das anders berechnen.
 // (2*, weil jeder Vertex aus einer Position und einer Normale besteht.)
 // vertexIndex ist ein schlechter Name. Das ist der Index des Quads.
             data[2*(vertexIndex + 0)] = p0;
@@ -65,18 +65,18 @@ void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Ve
             data[2*(vertexIndex + 4)] = p2;
             data[2*(vertexIndex + 5)] = p3;
 
-            Vec3D sp10 = mtSubtractVectorVector(p0, p1);
-            Vec3D sp12 = mtSubtractVectorVector(p2, p1);
-            Vec3D sp30 = mtSubtractVectorVector(p0, p3);
-            Vec3D sp32 = mtSubtractVectorVector(p2, p3);
+            MTVec3D sp10 = mtSubtractVectorVector(p0, p1);
+            MTVec3D sp12 = mtSubtractVectorVector(p2, p1);
+            MTVec3D sp30 = mtSubtractVectorVector(p0, p3);
+            MTVec3D sp32 = mtSubtractVectorVector(p2, p3);
 
-// Hier noch +1 rechnen, weil die Normale einen Vec3D weiter liegt.
-            Vec3D n1 = mtCrossProduct3D(sp12, sp10);
+// Hier noch +1 rechnen, weil die Normale einen MTVec3D weiter liegt.
+            MTVec3D n1 = mtCrossProduct3D(sp12, sp10);
             data[2*(vertexIndex + 0) + 1] = n1;
             data[2*(vertexIndex + 1) + 1] = n1;
             data[2*(vertexIndex + 2) + 1] = n1;
 
-            Vec3D n2 = mtCrossProduct3D(sp30, sp32);
+            MTVec3D n2 = mtCrossProduct3D(sp30, sp32);
             data[2*(vertexIndex + 3) + 1] = n2;
             data[2*(vertexIndex + 4) + 1] = n2;
             data[2*(vertexIndex + 5) + 1] = n2;
@@ -86,8 +86,8 @@ void createSurfaceVertices(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Ve
     }
 }
 
-void createUnitCubeVertices(int numSubdivisions, Vec3D* data) {
-// Hier das offset jetzt auch nicht mehr auf byte-Basis, sondern auf basis von Vec3D
+void createUnitCubeVertices(int numSubdivisions, MTVec3D* data) {
+// Hier das offset jetzt auch nicht mehr auf byte-Basis, sondern auf basis von MTVec3D
     int verticesPerSide = numSubdivisions*numSubdivisions*6;
     int vec3dsPerSide = 2*verticesPerSide;
     createSurfaceVertices(numSubdivisions, mtToVector3D(-1, -1,  1), mtToVector3D( 1, -1,  1), mtToVector3D( 1,  1,  1), mtToVector3D(-1,  1,  1), data + 0*vec3dsPerSide); // Front
@@ -98,12 +98,12 @@ void createUnitCubeVertices(int numSubdivisions, Vec3D* data) {
     createSurfaceVertices(numSubdivisions, mtToVector3D(-1,  1, -1), mtToVector3D( 1,  1, -1), mtToVector3D( 1, -1, -1), mtToVector3D(-1, -1, -1), data + 5*vec3dsPerSide); // Back
 }
 
-Geometry createSurface(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D v3) {
+Geometry createSurface(int numSubdivisions, MTVec3D v0, MTVec3D v1, MTVec3D v2, MTVec3D v3) {
     int numVertices = 6*numSubdivisions*numSubdivisions;
 
-    int byteSizeVertex = sizeof(Vec3D) + sizeof(Vec3D);
+    int byteSizeVertex = sizeof(MTVec3D) + sizeof(MTVec3D);
     int byteSizeData = numVertices*byteSizeVertex;
-    Vec3D* data = (Vec3D*)malloc(byteSizeData);
+    MTVec3D* data = (MTVec3D*)malloc(byteSizeData);
 
     createSurfaceVertices(numSubdivisions, v0, v1, v2, v3, data);
 
@@ -119,7 +119,7 @@ Geometry createSurface(int numSubdivisions, Vec3D v0, Vec3D v1, Vec3D v2, Vec3D 
     glBindVertexArray(geometry.vertexArrayObject);
 
     rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 0, 3, GL_FLOAT, GL_FALSE, byteSizeVertex, 0);
-    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(Vec3D));
+    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(MTVec3D));
 
     free(data);
 
@@ -135,9 +135,9 @@ Geometry createUnitCube(int numSubdivisions) {
     int numVerticesPerSide = 6*numSubdivisions*numSubdivisions;
     int numVertices = 6*numVerticesPerSide;
 
-    int byteSizeVertex = sizeof(Vec3D) + sizeof(Vec3D);
+    int byteSizeVertex = sizeof(MTVec3D) + sizeof(MTVec3D);
     int byteSizeData = numVertices*byteSizeVertex;
-    Vec3D* data = (Vec3D*)malloc(byteSizeData);
+    MTVec3D* data = (MTVec3D*)malloc(byteSizeData);
 
     createUnitCubeVertices(numSubdivisions, data);
 
@@ -153,7 +153,7 @@ Geometry createUnitCube(int numSubdivisions) {
     glBindVertexArray(geometry.vertexArrayObject);
 
     rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 0, 3, GL_FLOAT, GL_FALSE, byteSizeVertex, 0);
-    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(Vec3D));
+    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(MTVec3D));
 
     free(data);
 
@@ -164,18 +164,18 @@ Geometry createUnitSphere(int numSubdivisions) {
     int numVerticesPerSide = 6*numSubdivisions*numSubdivisions;
     int numVertices = 6*numVerticesPerSide;
 
-    int byteSizeVertex = sizeof(Vec3D) + sizeof(Vec3D);
+    int byteSizeVertex = sizeof(MTVec3D) + sizeof(MTVec3D);
     int byteSizeData = numVertices*byteSizeVertex;
-    Vec3D* data = (Vec3D*)malloc(byteSizeData*1000);
+    MTVec3D* data = (MTVec3D*)malloc(byteSizeData*1000);
 
     createUnitCubeVertices(numSubdivisions, data);
 
     for (int i = 0; i < numVertices; ++i) {
         // Cubical position
-        Vec3D c = data[2*i];
+        MTVec3D c = data[2*i];
 
         // Spherical position
-        Vec3D s;
+        MTVec3D s;
         s.x = c.x * sqrt(1.0f - (c.y * c.y) / 2.0f - (c.z * c.z) / 2.0f + (c.y * c.y * c.z * c.z) / 3.0f);
         s.y = c.y * sqrt(1.0f - (c.z * c.z) / 2.0f - (c.x * c.x) / 2.0f + (c.z * c.z * c.x * c.x) / 3.0f);
         s.z = c.z * sqrt(1.0f - (c.x * c.x) / 2.0f - (c.y * c.y) / 2.0f + (c.x * c.x * c.y * c.y) / 3.0f);
@@ -198,7 +198,7 @@ Geometry createUnitSphere(int numSubdivisions) {
     glBindVertexArray(geometry.vertexArrayObject);
 
     rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 0, 3, GL_FLOAT, GL_FALSE, byteSizeVertex, 0);
-    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(Vec3D));
+    rendering_setAttributePointer(geometry.vertexArrayObject, geometry.arrayBuffer, 1, 3, GL_FLOAT, GL_TRUE , byteSizeVertex, sizeof(MTVec3D));
 
     free(data);
 

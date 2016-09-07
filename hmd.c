@@ -13,8 +13,8 @@
 #define NORM_PITCH 1.188
 
 /**
- * Rechnet ein Einheits-Quaternion in eine Rotationsmatrix um.
- * @param q das Quaternion
+ * Rechnet ein Einheits-MTQuaternion in eine Rotationsmatrix um.
+ * @param q das MTQuaternion
  * @param m die Rotationsmatrix
  *
  */
@@ -34,12 +34,12 @@ static void quaternionToMatrix2( float q[4], float m[3][3] )
 }
 
 /**
- * Rechnet ein Einheits-Quaternion in eine Rotationsmatrix um.
- * @param q das Quaternion
+ * Rechnet ein Einheits-MTQuaternion in eine Rotationsmatrix um.
+ * @param q das MTQuaternion
  * @param m die Rotationsmatrix
  *
  */
- static void quaternionToMatrix (Quaternion q, float m[3][3])
+ static void quaternionToMatrix (MTQuaternion q, float m[3][3])
  {
     /* http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/ */
     /**
@@ -102,9 +102,9 @@ float posToAngle(short pos, double factor) {
 }
 
 /**
- * Liefert das Quaternion vom HMD normalisiert zurück.
+ * Liefert das MTQuaternion vom HMD normalisiert zurück.
  */
-Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, double maxJawAngle, double factor) {
+MTQuaternion getMTQuaternion(MTVec3D jawAxis, MTVec3D turnAxis, double minJawAngle, double maxJawAngle, double factor) {
     short a,b;
 
     /* im Fehlerfall gib 0 zurück. */
@@ -113,7 +113,7 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, doub
       && getAxisValue(1, &b)
       )) {
           printf("ERROR reading an axis value!\n");
-          Quaternion q;
+          MTQuaternion q;
           return q;
     }
 
@@ -122,12 +122,12 @@ Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, doub
     angle = (angle < 0.0 && angle > maxJawAngle) ? 0.0 : angle;
 
 
-    Quaternion qB = mtCreateQuaternion(jawAxis, angle);
-    Quaternion qA = mtCreateQuaternion(turnAxis, -posToAngle(a, factor));
+    MTQuaternion qB = mtCreateMTQuaternion(jawAxis, angle);
+    MTQuaternion qA = mtCreateMTQuaternion(turnAxis, -posToAngle(a, factor));
 
-    Quaternion qRes = mtAddQuaternionQuaternion(&qA, &qB);
+    MTQuaternion qRes = mtAddMTQuaternionMTQuaternion(&qA, &qB);
 
-    mtNormQuaternion(&qRes);
+    mtNormMTQuaternion(&qRes);
     return qRes;
 }
 
@@ -165,10 +165,10 @@ int initializeHMD(char* name) {
  * Liefert die Roll- Pitch- und Yaw-Winkel
  * @param ypr YawPitchRoll
  */
-int getYPR(Vec3D jawAxis, Vec3D turnAxis, float ypr[3]) {
+int getYPR(MTVec3D jawAxis, MTVec3D turnAxis, float ypr[3]) {
     float R[3][3];
 
-    Quaternion q = getQuaternion(jawAxis, turnAxis, 180, 180, 1.0);
+    MTQuaternion q = getMTQuaternion(jawAxis, turnAxis, 180, 180, 1.0);
 
     quaternionToMatrix(q, R);
     matrixToYPR(R, ypr);

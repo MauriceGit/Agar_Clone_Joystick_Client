@@ -14,35 +14,35 @@
 typedef struct
 {
     double s;
-    Vec3D v;
-} Quaternion;
+    MTVec3D v;
+} MTQuaternion;
 
-/* Low level operations on Quaternions */
+/* Low level operations on MTQuaternions */
 
-Quaternion mtCreateQuaternion(Vec3D axis, double angle);
+MTQuaternion mtCreateMTQuaternion(MTVec3D axis, double angle);
 
-Quaternion mtMultQuaternionQuaternion (const Quaternion* q1, const Quaternion* q2);
+MTQuaternion mtMultMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2);
 
-Quaternion mtMultQuaternionScalar (const Quaternion* q1, double s);
+MTQuaternion mtMultMTQuaternionScalar (const MTQuaternion* q1, double s);
 
-Quaternion mtAddQuaternionQuaternion (const Quaternion* q1, const Quaternion* q2);
+MTQuaternion mtAddMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2);
 
-Quaternion mtSubtractQuaternionQuaternion (const Quaternion* q1, const Quaternion* q2);
+MTQuaternion mtSubtractMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2);
 
-void mtConjugateQuaternion (Quaternion* q1);
+void mtConjugateMTQuaternion (MTQuaternion* q1);
 
-Quaternion mtInverseQuaternion (const Quaternion* q1);
+MTQuaternion mtInverseMTQuaternion (const MTQuaternion* q1);
 
-void mtNormQuaternion (Quaternion* q1);
+void mtNormMTQuaternion (MTQuaternion* q1);
 
-double mtLengthQuaternion (const Quaternion* q1);
+double mtLengthMTQuaternion (const MTQuaternion* q1);
 
-int mtIsNormQuaternion (const Quaternion* q1);
+int mtIsNormMTQuaternion (const MTQuaternion* q1);
 
-/* Some higher level functions, using Quaternions */
+/* Some higher level functions, using MTQuaternions */
 
-Vec3D mtRotatePointWithQuaternion(Quaternion q, Vec3D point);
-Vec3D mtRotatePointAxis (Vec3D axis, double angle, Vec3D point);
+MTVec3D mtRotatePointWithMTQuaternion(MTQuaternion q, MTVec3D point);
+MTVec3D mtRotatePointAxis (MTVec3D axis, double angle, MTVec3D point);
 
 #endif
 

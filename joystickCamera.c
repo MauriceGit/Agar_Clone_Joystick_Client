@@ -19,10 +19,10 @@
 #include "mtQuaternions.h"
 
 /** Kameraposition */
-Vec3D G_JoyUpVector;
-Vec3D G_JoyViewVector;
-Vec3D G_JoyCameraTranslation;
-Vec3D G_JoyCameraPosition;
+MTVec3D G_JoyUpVector;
+MTVec3D G_JoyViewVector;
+MTVec3D G_JoyCameraTranslation;
+MTVec3D G_JoyCameraPosition;
 
 /* ------- GETTER / SETTER ------- */
 
@@ -68,7 +68,7 @@ void calcJoyCameraMovement (double interval)
 
     handleHMDEvent();
 
-    Vec3D sideDirection = mtNormVector3D(mtCrossProduct3D(G_JoyViewVector, G_JoyUpVector));
+    MTVec3D sideDirection = mtNormVector3D(mtCrossProduct3D(G_JoyViewVector, G_JoyUpVector));
 
     double maxAngle = 179.0 - mtAngleVectorVector(G_JoyViewVector, G_JoyUpVector); // bei 90° -- +70°
     double minAngle = 1.0 - mtAngleVectorVector(G_JoyViewVector, G_JoyUpVector); // bei 90° -- -70°
@@ -76,23 +76,23 @@ void calcJoyCameraMovement (double interval)
     maxAngle = maxAngle < 0 ? -1.0 : maxAngle;
     minAngle = minAngle > 0 ? 1.0 : minAngle;
 
-    Quaternion q = getQuaternion(sideDirection, {.x=0, .y=1, .z=0}, minAngle, maxAngle, interval);
+    MTQuaternion q = getMTQuaternion(sideDirection, {.x=0, .y=1, .z=0}, minAngle, maxAngle, interval);
 
-    G_JoyViewVector = mtRotatePointWithQuaternion(q, G_JoyViewVector);
+    G_JoyViewVector = mtRotatePointWithMTQuaternion(q, G_JoyViewVector);
 
     double forwardTranslation = -getTranslationAxisValue(4) / 500000.0;
-    Vec3D forwardVec = mtNormVector3D({.x=G_JoyViewVector.x, .y=0, .z=G_JoyViewVector.z});
+    MTVec3D forwardVec = mtNormVector3D({.x=G_JoyViewVector.x, .y=0, .z=G_JoyViewVector.z});
     G_JoyCameraTranslation = mtAddVectorVector(G_JoyCameraTranslation, mtMultiplyVectorScalar(forwardVec, forwardTranslation));
 
     double sideTranslation = getTranslationAxisValue(3) / 500000.0;
-    Vec3D sideVec = mtNormVector3D({.x=sideDirection.x, .y=0, .z=sideDirection.z});
+    MTVec3D sideVec = mtNormVector3D({.x=sideDirection.x, .y=0, .z=sideDirection.z});
     G_JoyCameraTranslation = mtAddVectorVector(G_JoyCameraTranslation, mtMultiplyVectorScalar(sideVec, sideTranslation));
 
-    Vec3D upDirection = {.x=0, .y=1, .z=0};
+    MTVec3D upDirection = {.x=0, .y=1, .z=0};
     double upTranslation = (getTranslationAxisValue(2) + 32768) / 500000.0;
     G_JoyCameraTranslation = mtAddVectorVector(G_JoyCameraTranslation, mtMultiplyVectorScalar(upDirection, upTranslation));
 
-    Vec3D downDirection = {.x=0, .y=-1, .z=0};
+    MTVec3D downDirection = {.x=0, .y=-1, .z=0};
     double downTranslation = (getTranslationAxisValue(5) + 32768) / 500000.0;
     G_JoyCameraTranslation = mtAddVectorVector(G_JoyCameraTranslation, mtMultiplyVectorScalar(downDirection, downTranslation));
 

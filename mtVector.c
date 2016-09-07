@@ -19,7 +19,7 @@
 /**
  * Printet einen Vector aus.
  */
-void mtPrintVector (Vec3D a)
+void mtPrintVector (MTVec3D a)
 {
     int i;
     printf("printVector:\n");
@@ -33,9 +33,9 @@ void mtPrintVector (Vec3D a)
  * @param y
  * @param z
  */
-Vec3D mtToVector3D(float x, float y, float z)
+MTVec3D mtToVector3D(float x, float y, float z)
 {
-    Vec3D res;
+    MTVec3D res;
     res.x = x;
     res.y = y;
     res.z = z;
@@ -47,7 +47,7 @@ Vec3D mtToVector3D(float x, float y, float z)
  * @param v
  *@return float
  */
-float mtVectorLength3D(Vec3D vector)
+float mtVectorLength3D(MTVec3D vector)
 {
   return sqrt((vector.x*vector.x)+
               (vector.y*vector.y)+
@@ -59,7 +59,7 @@ float mtVectorLength3D(Vec3D vector)
  * @param v der zu normierende Vektor
  * @return der normierte Vektor
  */
-Vec3D mtNormVector3D(Vec3D vector)
+MTVec3D mtNormVector3D(MTVec3D vector)
 {
     float l = mtVectorLength3D(vector);
     if (l >= .00001f)
@@ -73,9 +73,9 @@ Vec3D mtNormVector3D(Vec3D vector)
  * @param
  * @return
  */
-Vec3D mtCrossProduct3D(Vec3D a, Vec3D b)
+MTVec3D mtCrossProduct3D(MTVec3D a, MTVec3D b)
 {
-    Vec3D product = mtToVector3D((a.x*b.z - a.z*b.y),
+    MTVec3D product = mtToVector3D((a.x*b.z - a.z*b.y),
                       (a.z*b.x - a.x*b.z),
                       (a.x*b.y - a.y*b.x));
     return product;
@@ -84,16 +84,16 @@ Vec3D mtCrossProduct3D(Vec3D a, Vec3D b)
 /**
  * Multipliziert einen Vektor mit einem Skalar.
  */
-Vec3D mtMultiplyVectorScalar (Vec3D a, double s)
+MTVec3D mtMultiplyVectorScalar (MTVec3D a, double s)
 {
-    Vec3D res;
+    MTVec3D res;
     res.x = a.x * s;
     res.y = a.y * s;
     res.z = a.z * s;
     return res;
 }
 
-double mtScalarProduct (Vec3D a, Vec3D b)
+double mtScalarProduct (MTVec3D a, MTVec3D b)
 {
     return a.x*b.x + a.y*b.y + a.z*b.z;
 }
@@ -101,9 +101,9 @@ double mtScalarProduct (Vec3D a, Vec3D b)
 /**
  * Zieht b von a ab, also: a-b
  */
-Vec3D mtSubtractVectorVector (Vec3D a, Vec3D b)
+MTVec3D mtSubtractVectorVector (MTVec3D a, MTVec3D b)
 {
-    Vec3D res;
+    MTVec3D res;
     res.x = a.x - b.x;
     res.y = a.y - b.y;
     res.z = a.z - b.z;
@@ -113,7 +113,7 @@ Vec3D mtSubtractVectorVector (Vec3D a, Vec3D b)
 /**
  * Teilt den Vector a durch s.
  */
-Vec3D mtDivideVectorScalar (Vec3D a, double s)
+MTVec3D mtDivideVectorScalar (MTVec3D a, double s)
 {
     return mtMultiplyVectorScalar(a, 1.0/s);
 }
@@ -121,9 +121,9 @@ Vec3D mtDivideVectorScalar (Vec3D a, double s)
 /**
  * Addiert a und b und schreibt das Ergebnis in res.
  */
-Vec3D mtAddVectorVector (Vec3D a, Vec3D b)
+MTVec3D mtAddVectorVector (MTVec3D a, MTVec3D b)
 {
-    Vec3D res;
+    MTVec3D res;
     res.x = a.x + b.x;
     res.y = a.y + b.y;
     res.z = a.z + b.z;
@@ -152,7 +152,7 @@ double mtRadToDeg (double rad)
  * Berechnet den Winkel zwischen zwei Vektoren und gibt das Ergebnis in
  * ° zurück (nicht radiant!).
  */
-double mtAngleVectorVector (Vec3D a, Vec3D b)
+double mtAngleVectorVector (MTVec3D a, MTVec3D b)
 {
     return mtRadToDeg (acos (mtScalarProduct(a, b) / (mtVectorLength3D(a)*mtVectorLength3D(b))));
 }

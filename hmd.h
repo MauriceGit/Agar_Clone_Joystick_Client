@@ -12,9 +12,9 @@
 #define JOY_DEV "/dev/input/js1"
 
 /**
- * Liefert das Quaternion vom HMD normalisiert zurück.
+ * Liefert das MTQuaternion vom HMD normalisiert zurück.
  */
-Quaternion getQuaternion(Vec3D jawAxis, Vec3D turnAxis, double minJawAngle, double maxJawAngle, double factor);
+MTQuaternion getMTQuaternion(MTVec3D jawAxis, MTVec3D turnAxis, double minJawAngle, double maxJawAngle, double factor);
 
 /**
  * Gibt den absoluten Wert, den der Joystick liefert.

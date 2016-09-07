@@ -10,7 +10,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "logic.h"
-#include "joystickCamera.h"
+#include "mtJoystickCamera.h"
 #include "sphere.h"
 
 using easywsclient::WebSocket;
@@ -445,9 +445,12 @@ void cbDisplay (GLFWwindow * window)
              0.0, 0.0, 0.0,
              0.0, 1.0, 0.0);
     } else {
-        gluLookAt (getJoyCameraPosition(0), getJoyCameraPosition(1), getJoyCameraPosition(2),
-             getJoyCenter(0), getJoyCenter(1), getJoyCenter(2),
-             getJoyUp(0), getJoyUp(1), getJoyUp(2));
+        MTVec3D cam = mtGetJoyCameraPosition();
+        MTVec3D center = mtGetJoyCenter();
+        MTVec3D up = mtGetJoyUp();
+        gluLookAt (cam.x, cam.y, cam.z,
+             center.x, center.y, center.z,
+             up.x, up.y, up.z);
     }
 
     drawColoredSpheres();
@@ -626,7 +629,7 @@ void mainLoop (GLFWwindow * window)
     while (!glfwWindowShouldClose(window) && !G_WSFinished)
     {
         if (G_JoystickWorking) {
-            calcJoyCameraMovement(lastCallTime);
+            mtCalcJoyCameraMovement(lastCallTime);
         }
         cbDisplay (window);
         lastCallTime = cbTimer (lastCallTime);
@@ -732,7 +735,7 @@ int initAndStartIO (char* title, char* joystickSrc, int width, int height)
 
     if (createWindow())
     {
-        G_JoystickWorking = initJoyCamera(joystickSrc);
+        G_JoystickWorking = mtInitJoyCamera(joystickSrc);
         G_JoystickInput = G_JoystickWorking;
 
         GLenum err = glewInit();

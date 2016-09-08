@@ -1,7 +1,7 @@
 
 TARGET = agar_joystick
 
-SRCS_C = mtVector.c mtQuaternions.c joystick.c hmd.c mtJoystickCamera.c sphere.c logic.c
+SRCS_C = mtVector.c mtQuaternions.c mtJoystick.c mtXboxController.c sphere.c logic.c
 SRCS_CPP = agar_hmd.cpp tinythread/tinythread.cpp easywsclient/easywsclient.cpp
 
 OBJS_C = $(SRCS_C:%.c=%.o)

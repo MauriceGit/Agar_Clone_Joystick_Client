@@ -1,7 +1,7 @@
 /**
  * Implementation of most relevant functions on MTQuaternions.
  *
- * All operations are prefixed with 'mt' to avoid name clashes and get a
+ * All operations are prefixed with 'mt' to avoid name clashes and get an
  * attempt for a unique prefix.
  *
  * @author Maurice Tollmien
@@ -21,7 +21,7 @@
 /*
  * Low level operations on MTQuaternions
  */
-MTQuaternion mtCreateMTQuaternion(MTVec3D axis, double angle) {
+MTQuaternion mtCreateQuaternion(MTVec3D axis, double angle) {
     MTQuaternion q;
     q.s = cos (angle/2.0);
     q.v = mtMultiplyVectorScalar(axis, sin(angle/2.0));
@@ -33,7 +33,7 @@ MTQuaternion mtCreateMTQuaternion(MTVec3D axis, double angle) {
  * Careful! Not commutative!!!
  * Calculates: q1 * q2
  */
-MTQuaternion mtMultMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
+MTQuaternion mtMultQuaternionQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
 {
     MTQuaternion res;
     res.s = q1->s*q2->s - mtScalarProduct(q1->v, q2->v);
@@ -51,20 +51,20 @@ MTQuaternion mtMultMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQua
  * Therefore the scalar will be converted to a MTQuaternion.
  * After that the two MTQuaternions will be muliplied.
  */
-MTQuaternion mtMultMTQuaternionScalar (const MTQuaternion* q1, double s)
+MTQuaternion mtMultQuaternionScalar (const MTQuaternion* q1, double s)
 {
     MTQuaternion q2;
 
     q2.s = s;
-    q2.v = {.x=0.0, .y=0.0, .z=0.0};
+    q2.v = mtToVector3D(0,0,0);
 
-    return mtMultMTQuaternionMTQuaternion (q1, &q2);
+    return mtMultQuaternionQuaternion (q1, &q2);
 }
 
 /**
  * Calculates: q1 + q2.
  */
-MTQuaternion mtAddMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
+MTQuaternion mtAddQuaternionQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
 {
     MTQuaternion res;
     res.s = q1->s + q2->s;
@@ -75,7 +75,7 @@ MTQuaternion mtAddMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuat
 /**
  * Calculates q1 - q2.
  */
-MTQuaternion mtSubtractMTQuaternionMTQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
+MTQuaternion mtSubtractQuaternionQuaternion (const MTQuaternion* q1, const MTQuaternion* q2)
 {
     MTQuaternion res;
     res.s = q1->s - q2->s;
@@ -86,32 +86,33 @@ MTQuaternion mtSubtractMTQuaternionMTQuaternion (const MTQuaternion* q1, const M
 /**
  * Complex conjugate the MTQuaternion.
  */
-void mtConjugateMTQuaternion (MTQuaternion* q1)
+MTQuaternion mtConjugateQuaternion (const MTQuaternion* q1)
 {
-    q1->v = mtMultiplyVectorScalar(q1->v, -1.0);
+    MTQuaternion res;
+    res.s = q1->s;
+    res.v = mtMultiplyVectorScalar(q1->v, -1.0);
+    return res;
 }
 
 /**
  * Invert the MTQuaternion.
  */
-MTQuaternion mtInverseMTQuaternion (const MTQuaternion* q1)
+MTQuaternion mtInverseQuaternion (const MTQuaternion* q1)
 {
     MTQuaternion res;
-    double qlen = pow (mtLengthMTQuaternion (q1), 2);
+    double qlen = pow (mtLengthQuaternion (q1), 2);
 
-    MTQuaternion tmp = *q1;
+    MTQuaternion tmp = mtConjugateQuaternion(q1);
 
-    mtConjugateMTQuaternion(&tmp);
-
-    return mtMultMTQuaternionScalar (&tmp, 1.0 / qlen);
+    return mtMultQuaternionScalar (&tmp, 1.0 / qlen);
 }
 
 /**
  * Normalize the MTQuaternion to a length of 1.
  */
-void mtNormMTQuaternion (MTQuaternion* q1)
+void mtNormQuaternion (MTQuaternion* q1)
 {
-    double qlen = mtLengthMTQuaternion (q1);
+    double qlen = mtLengthQuaternion (q1);
 
     q1->s /= qlen;
     q1->v = mtMultiplyVectorScalar(q1->v, 1.0 / qlen);
@@ -120,7 +121,7 @@ void mtNormMTQuaternion (MTQuaternion* q1)
 /**
  * Calculates the length of the MTQuaternion.
  */
-double mtLengthMTQuaternion (const MTQuaternion* q1)
+double mtLengthQuaternion (const MTQuaternion* q1)
 {
     return sqrt (q1->s*q1->s + q1->v.x*q1->v.x + q1->v.y*q1->v.y + q1->v.z*q1->v.z);
 }
@@ -128,7 +129,7 @@ double mtLengthMTQuaternion (const MTQuaternion* q1)
 /**
  * Check if the MTQuaternion is normalized.
  */
-int mtIsNormMTQuaternion (const MTQuaternion* q1)
+int mtIsNormQuaternion (const MTQuaternion* q1)
 {
     double res = q1->s*q1->s + q1->v.x*q1->v.x + q1->v.y*q1->v.y + q1->v.z*q1->v.z;
     return (res + EPS >= 1.0) && (res - EPS <= 1.0);
@@ -136,9 +137,9 @@ int mtIsNormMTQuaternion (const MTQuaternion* q1)
 
 /* Some higher level functions, using MTQuaternions */
 
-MTVec3D mtRotatePointWithMTQuaternion(MTQuaternion q, MTVec3D point)
+MTVec3D mtRotatePointWithQuaternion(MTQuaternion q, MTVec3D point)
 {
-    mtNormMTQuaternion(&q);
+    mtNormQuaternion(&q);
 
     // Create MTQuaternion of the point to rotate
     MTQuaternion p;
@@ -147,9 +148,9 @@ MTVec3D mtRotatePointWithMTQuaternion(MTQuaternion q, MTVec3D point)
 
     // The actual calculations.
     //  ---  q p q*  ---
-    MTQuaternion inverseQ = mtInverseMTQuaternion(&q);
-    MTQuaternion res = mtMultMTQuaternionMTQuaternion (&q, &p);
-    res = mtMultMTQuaternionMTQuaternion (&res, &inverseQ);
+    MTQuaternion inverseQ = mtInverseQuaternion(&q);
+    MTQuaternion res = mtMultQuaternionQuaternion (&q, &p);
+    res = mtMultQuaternionQuaternion (&res, &inverseQ);
 
     // Write new rotated coordinates back to the point
     return res.v;
@@ -167,6 +168,6 @@ MTVec3D mtRotatePointAxis (MTVec3D axis, double angle, MTVec3D point)
     q.s = cos (angle/2.0);
     q.v = mtMultiplyVectorScalar(axis, sin(angle/2.0));
 
-    return mtRotatePointWithMTQuaternion(q, point);
+    return mtRotatePointWithQuaternion(q, point);
 
 }
